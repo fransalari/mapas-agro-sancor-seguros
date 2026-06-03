@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SANCOR SEGUROS AGRO · Comparativo Mercado vs Compañía</title>
+<title>CIDES · TAGH · Comparativo Mercado vs Compañía</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -25,22 +25,23 @@
   .header-titulo h1 { margin: 0; font-size: 17px; font-weight: 700; color: #1a1a1a; letter-spacing: -0.2px; }
   .header-titulo p { margin: 3px 0 0 0; font-size: 12px; color: #888; font-weight: 400; }
   .header-logos { display: flex; align-items: center; gap: 20px; }
-  .header-logos .logo-GSS { height: 38px; width: auto; filter: invert(1) brightness(0.2); }
-  .header-logo-sancor {
+  .header-logos .logo-cides { height: 38px; width: auto; filter: invert(1) brightness(0.2); }
+  .header-logo-tagh {
     font-family: 'Helvetica Neue', Arial, sans-serif;
     font-weight: 800; font-size: 16px; letter-spacing: 1px; color: #1a1a1a;
     display: flex; align-items: center; gap: 4px;
   }
-  .header-logo-sancor::after {
+  .header-logo-tagh::after {
     content: ''; display: inline-block; width: 6px; height: 19px;
     background: #c8102e; margin-left: 4px;
   }
-  .header-logo-sancor .sub { font-weight: 300; font-size: 11px; letter-spacing: 1.4px; color: #666; }
+  .header-logo-tagh .sub { font-weight: 300; font-size: 11px; letter-spacing: 1.4px; color: #666; }
 
   .filtros-row {
-    background: white; padding: 12px 28px;
-    display: grid; grid-template-columns: 220px repeat(4, 1fr); gap: 12px;
+    background: white; padding: 26px 28px 12px 28px;
+    display: grid; grid-template-columns: repeat(4, 1fr) 250px; gap: 12px;
     border-bottom: 1px solid #e8e8ec;
+    align-items: end;
   }
   .filtros-row.row-2 { grid-template-columns: 1fr; padding-top: 0; padding-bottom: 14px; }
   .filtro { position: relative; }
@@ -59,7 +60,30 @@
   }
   .filtro select:hover { border-color: #999; }
   .filtro select:focus { outline: none; border-color: #1F4E78; box-shadow: 0 0 0 2px rgba(31,78,120,.1); }
-  .filtro.empresa select { border-color: #C8102E; font-weight: 700; color: #C8102E; }
+
+  /* Filtro de compañía destacado y separado a la derecha */
+  .filtro.empresa {
+    position: relative;
+    padding-left: 16px;
+    border-left: 2px dashed #C8102E;
+  }
+  .filtro.empresa select {
+    border: 2px solid #C8102E; font-weight: 700; color: #C8102E;
+    background-color: #FFF5F7;
+  }
+  .filtro.empresa .filtro-label {
+    color: #C8102E; font-weight: 800;
+  }
+  .filtro.empresa::before {
+    content: 'Solo aplica al mapa derecho ↓';
+    position: absolute; top: -22px; left: 16px; right: 0;
+    font-size: 9px; color: #C8102E; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  /* Marca visual sobre los filtros comunes (aplican a ambos) */
+  .filtro-grupo-comun {
+    position: relative;
+  }
 
   .comparativo-wrap {
     display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
@@ -185,19 +209,15 @@
 <div class="header">
   <div class="header-titulo">
     <h1>Análisis Comparativo: Mercado Total vs Compañía</h1>
-    <p>Tasa diferencial respecto al mercado consolidado · Material analítico de referencia</p>
+    <p>Izquierda: mercado consolidado · Derecha: solo la compañía seleccionada · Filtros geográficos aplican a ambos mapas</p>
   </div>
   <div class="header-logos">
-    <img src="https://www.sancorseguros.com.ar/logo.svg" alt="GSS" class="logo-GSS">
-    <div class="header-logo-sancor">SANCOR SEGUROS<span class="sub">AGRO</span></div>
+    <img src="https://cides.ar/wp-content/uploads/cides-logo-w.svg" alt="CIDES" class="logo-cides">
+    <div class="header-logo-tagh">TAGH<span class="sub">GESTION</span></div>
   </div>
 </div>
 
 <div class="filtros-row">
-  <div class="filtro empresa">
-    <div class="filtro-label">COMPAÑÍA</div>
-    <select id="f-empresa"></select>
-  </div>
   <div class="filtro">
     <div class="filtro-label">PROVINCIA</div>
     <select id="f-provincia"><option value="">Todas</option></select>
@@ -213,6 +233,10 @@
   <div class="filtro">
     <div class="filtro-label">ESCENARIO CAT</div>
     <select id="f-escenario"></select>
+  </div>
+  <div class="filtro empresa">
+    <div class="filtro-label">COMPAÑÍA</div>
+    <select id="f-empresa"></select>
   </div>
 </div>
 
@@ -245,7 +269,10 @@
 <div class="comparativo-wrap">
   <div class="columna columna-mercado">
     <div class="columna-header">
-      <div>Mapa Mercado (consolidado)</div>
+      <div>
+        <div>Mapa Mercado</div>
+        <div class="columna-titulo-emp" style="margin-top:2px">Todas las compañías consolidadas</div>
+      </div>
       <div class="columna-titulo-emp" id="titulo-mercado-ha">—</div>
     </div>
     <div class="mapa-c" id="map-mercado"></div>
@@ -259,7 +286,10 @@
 
   <div class="columna columna-empresa">
     <div class="columna-header">
-      <div>Mapa <span id="titulo-empresa">Compañía</span></div>
+      <div>
+        <div>Mapa <span id="titulo-empresa">Compañía</span></div>
+        <div class="columna-titulo-emp" style="margin-top:2px">Cartera específica seleccionada</div>
+      </div>
       <div class="columna-titulo-emp" id="titulo-empresa-ha">—</div>
     </div>
     <div class="mapa-c" id="map-empresa"></div>
@@ -280,7 +310,7 @@
 
 <script>
 const GEOJSON_URL = 'https://raw.githubusercontent.com/fransalari/mapas-agro/main/admin_boundaries_vf.json';
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQnn5QR-XWMbQu56h-1tscw-Cik5vTI5O7Do8jjBeby4MpAar0jw2_xQ6_SuIxUoOvE-opa_VlnjYcx/pub?gid=1613070223&single=true&output=csv';  // URL del CSV publicado en Google Sheets
+const CSV_URL = 'BASE_COMPARATIVA_URL_AQUI';  // ← reemplazar con la URL del CSV publicado en Google Sheets
 
 const ESCENARIO_DEFAULT = 'N (dinámico)';
 const PALETA = [
