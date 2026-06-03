@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CIDES · agro · Comparativo Mercado vs Compañía</title>
+<title>SANCOR SEGUROS AGRO · Comparativo Mercado vs Compañía</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -24,18 +24,8 @@
   .header-titulo { flex: 1; }
   .header-titulo h1 { margin: 0; font-size: 17px; font-weight: 700; color: #1a1a1a; letter-spacing: -0.2px; }
   .header-titulo p { margin: 3px 0 0 0; font-size: 12px; color: #888; font-weight: 400; }
-  .header-logos { display: flex; align-items: center; gap: 20px; }
-  .header-logos .logo-sancorseguros { height: 38px; width: auto; filter: invert(1) brightness(0.2); }
-  .header-logo-agro {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    font-weight: 800; font-size: 16px; letter-spacing: 1px; color: #1a1a1a;
-    display: flex; align-items: center; gap: 4px;
-  }
-  .header-logo-agro::after {
-    content: ''; display: inline-block; width: 6px; height: 19px;
-    background: #c8102e; margin-left: 4px;
-  }
-  .header-logo-agro .sub { font-weight: 300; font-size: 11px; letter-spacing: 1.4px; color: #666; }
+  .header-logos { display: flex; align-items: center; gap: 14px; }
+  .header-logos .logo-sancorseguros { height: 38px; width: auto; }
 
   .filtros-row {
     background: white; padding: 26px 28px 12px 28px;
@@ -79,10 +69,6 @@
     position: absolute; top: -22px; left: 16px; right: 0;
     font-size: 9px; color: #C8102E; font-weight: 700;
     text-transform: uppercase; letter-spacing: 0.4px;
-  }
-  /* Marca visual sobre los filtros comunes (aplican a ambos) */
-  .filtro-grupo-comun {
-    position: relative;
   }
 
   .comparativo-wrap {
@@ -159,18 +145,22 @@
   }
 
   .legend {
-    background: white; padding: 8px 10px;
+    background: white; padding: 9px 11px;
     border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.15);
-    font-size: 10px; line-height: 1.4; min-width: 130px;
+    font-size: 10px; line-height: 1.4; min-width: 150px;
   }
-  .legend .titulo { font-weight: 700; margin-bottom: 4px; color: #333; font-size: 10px; }
+  .legend .titulo { font-weight: 700; margin-bottom: 5px; color: #333; font-size: 10px; }
   .legend-bar {
     height: 9px;
     background: linear-gradient(to right, #1a9850 0%, #91cf60 20%, #d9ef8b 40%, #fee08b 60%, #fc8d59 80%, #d73027 100%);
     border-radius: 2px; margin-bottom: 3px;
     border: 1px solid rgba(0,0,0,.1);
   }
-  .legend-labels { display: flex; justify-content: space-between; font-size: 9px; color: #666; }
+  .legend-labels { display: flex; justify-content: space-between; font-size: 9px; color: #555; font-weight: 600; }
+  .legend-nota {
+    margin-top: 4px; font-size: 8.5px; color: #999;
+    font-style: italic; line-height: 1.3;
+  }
   .legend-sin-dato { margin-top: 5px; font-size: 9px; color: #666; display: flex; align-items: center; gap: 5px; }
   .legend-sin-dato i { display: inline-block; width: 12px; height: 9px; background: #e6e6e6; border: 1px solid rgba(0,0,0,.1); }
 
@@ -212,8 +202,7 @@
     <p>Izquierda: mercado consolidado · Derecha: solo la compañía seleccionada · Filtros geográficos aplican a ambos mapas</p>
   </div>
   <div class="header-logos">
-    <img src="https://www.sancorseguros.com.ar/logo.svg" alt="SANCOR SEGUROS" class="logo-sancorseguros">
-    <div class="header-logo-agro"></div>
+    <img src="Sancor_Seguros_Logo.png" alt="SANCOR SEGUROS" class="logo-sancorseguros">
   </div>
 </div>
 
@@ -303,14 +292,14 @@
 </div>
 
 <div class="disclaimer">
-  <strong>Aclaración:</strong> Los valores son indicadores estadísticos sobre información histórica de campañas previas. La <strong>Tasa Mercado</strong> consolida todas las compañías del mercado argentino. La <strong>Tasa Compañía</strong> corresponde a la cartera específica seleccionada. El <strong>Ajuste Sugerido</strong> = (Tasa Mercado − Tasa Compañía) / Tasa Compañía × 100%. Valores positivos sugieren que la compañía debería aumentar su tasa; negativos indican que podría reducirla. Es una referencia analítica que no contempla efectos de diversificación de cartera, costo de capital ni gastos específicos de cada compañía.
+  <strong>Aclaración:</strong> Los valores son indicadores estadísticos sobre información histórica de campañas previas. La <strong>Tasa Mercado</strong> consolida todas las compañías del mercado argentino. La <strong>Tasa Compañía</strong> corresponde a la cartera específica seleccionada. El <strong>Ajuste Sugerido</strong> = (Tasa Mercado − Tasa Compañía) / Tasa Compañía × 100%. Valores positivos sugieren que la compañía debería aumentar su tasa; negativos indican que podría reducirla. Cada mapa usa una <strong>escala de color independiente</strong>: el rango se ajusta a los valores del propio mapa para maximizar el contraste visual interno. Para comparar valores absolutos entre mapas use los KPIs numéricos.
 </div>
 
 <div id="status">Cargando datos…</div>
 
 <script>
 const GEOJSON_URL = 'https://raw.githubusercontent.com/fransalari/mapas-agro/main/admin_boundaries_vf.json';
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQnn5QR-XWMbQu56h-1tscw-Cik5vTI5O7Do8jjBeby4MpAar0jw2_xQ6_SuIxUoOvE-opa_VlnjYcx/pub?gid=1613070223&single=true&output=csv';  // URL del CSV publicado en Google Sheets
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQnn5QR-XWMbQu56h-1tscw-Cik5vTI5O7Do8jjBeby4MpAar0jw2_xQ6_SuIxUoOvE-opa_VlnjYcx/pub?gid=1613070223&single=true&output=csv';
 
 const ESCENARIO_DEFAULT = 'N (dinámico)';
 const PALETA = [
@@ -323,8 +312,10 @@ const PALETA = [
 ];
 const COLOR_SIN_DATO = '#e6e6e6';
 
-// Para el coloreado: usamos LC histórico (escala fija nacional)
-let lcMin = 0, lcMax = 5;
+// Escalas INDEPENDIENTES por mapa (Opción D)
+// Cada mapa calcula su propio min/max basado en los datos que muestra
+let escalaMercado = { min: 0, max: 5 };
+let escalaEmpresa = { min: 0, max: 5 };
 
 let geojsonData = null;
 let csvData = [];
@@ -399,22 +390,27 @@ function initMaps() {
   syncFrom(mapMercado, mapEmpresa);
   syncFrom(mapEmpresa, mapMercado);
 
-  // Leyendas
-  function addLegend(map) {
+  // Leyendas (con sufijo m/e para identificar el mapa)
+  function addLegend(map, sufijo) {
     const legend = L.control({ position: 'bottomright' });
     legend.onAdd = function() {
       const div = L.DomUtil.create('div', 'legend');
       div.innerHTML = `
         <div class="titulo">LC Histórico</div>
         <div class="legend-bar"></div>
-        <div class="legend-labels"><span id="leg-min-${map === mapMercado ? 'm' : 'e'}">—</span><span id="leg-max-${map === mapMercado ? 'm' : 'e'}">—</span></div>
+        <div class="legend-labels">
+          <span id="leg-min-${sufijo}">—</span>
+          <span id="leg-mid-${sufijo}" style="color:#888">—</span>
+          <span id="leg-max-${sufijo}">—</span>
+        </div>
+        <div class="legend-nota">Escala relativa a este mapa</div>
         <div class="legend-sin-dato"><i></i>Sin datos</div>`;
       return div;
     };
     legend.addTo(map);
   }
-  addLegend(mapMercado);
-  addLegend(mapEmpresa);
+  addLegend(mapMercado, 'm');
+  addLegend(mapEmpresa, 'e');
 }
 
 async function cargarDatos() {
@@ -457,20 +453,7 @@ async function cargarDatos() {
     return out;
   }).filter(r => r.geo_id != null);
 
-  // Calcular escala fija nacional de LC histórico (percentil 5-95 sobre MERCADO)
-  const lcVals = csvData
-    .filter(r => r.vista_str === 'MERCADO' && r.lc_medio_pct != null && r.n_anios_cat_str === ESCENARIO_DEFAULT)
-    .map(r => r.lc_medio_pct).sort((a,b) => a-b);
-  if (lcVals.length) {
-    lcMin = lcVals[Math.floor(lcVals.length * 0.05)];
-    lcMax = lcVals[Math.floor(lcVals.length * 0.95)];
-  }
-  console.log(`Escala LC: ${lcMin.toFixed(2)}% – ${lcMax.toFixed(2)}%`);
-  document.getElementById('leg-min-m').textContent = lcMin.toFixed(1) + '%';
-  document.getElementById('leg-max-m').textContent = lcMax.toFixed(1) + '%';
-  document.getElementById('leg-min-e').textContent = lcMin.toFixed(1) + '%';
-  document.getElementById('leg-max-e').textContent = lcMax.toFixed(1) + '%';
-
+  console.log('Total filas:', csvData.length);
   setStatus(`${csvData.length.toLocaleString('es-AR')} filas cargadas`);
 }
 
@@ -483,7 +466,6 @@ function cargarScript(src) {
 }
 
 function popularFiltros() {
-  // Empresas disponibles
   const empresas = new Set();
   for (const r of csvData) {
     if (r.vista_str && r.vista_str.startsWith('EMPRESA_')) {
@@ -500,7 +482,6 @@ function popularFiltros() {
   });
   selEmp.value = filtros.empresa;
 
-  // Provincias del MERCADO (con conteo)
   popularProvincias();
   popularDeptos();
   popularCultivos();
@@ -686,6 +667,34 @@ function calcularKPIs(filas) {
   };
 }
 
+// ============================================================
+// OPCIÓN D: Escala INDEPENDIENTE por mapa
+// ============================================================
+function calcularEscala(stats) {
+  const vals = [];
+  for (const s of stats.values()) {
+    if (typeof s.lc_avg === 'number' && isFinite(s.lc_avg)) vals.push(s.lc_avg);
+  }
+  if (!vals.length) return { min: 0, max: 1 };
+  vals.sort((a,b) => a-b);
+  // Percentiles 5 y 95 para evitar outliers
+  let min = vals[Math.floor(vals.length * 0.05)];
+  let max = vals[Math.floor(vals.length * 0.95)];
+  // Asegurar mínimo de rango razonable (evitar escala degenerada)
+  if (max <= min) max = min + 0.5;
+  if (max - min < 0.5) max = min + 0.5;
+  return { min, max };
+}
+
+function actualizarLeyenda(escala, sufijo) {
+  const minEl = document.getElementById('leg-min-' + sufijo);
+  const midEl = document.getElementById('leg-mid-' + sufijo);
+  const maxEl = document.getElementById('leg-max-' + sufijo);
+  if (minEl) minEl.textContent = escala.min.toFixed(2) + '%';
+  if (midEl) midEl.textContent = ((escala.min + escala.max) / 2).toFixed(2) + '%';
+  if (maxEl) maxEl.textContent = escala.max.toFixed(2) + '%';
+}
+
 function interpColor(t) {
   if (t == null || isNaN(t)) return COLOR_SIN_DATO;
   t = Math.max(0, Math.min(1, t));
@@ -701,23 +710,24 @@ function interpColor(t) {
   }
   return COLOR_SIN_DATO;
 }
-function colorPorLC(v) {
+
+function colorPorLC(v, escala) {
   if (v == null || isNaN(v)) return COLOR_SIN_DATO;
-  if (lcMax === lcMin) return interpColor(0.5);
-  return interpColor((v - lcMin) / (lcMax - lcMin));
+  if (escala.max === escala.min) return interpColor(0.5);
+  return interpColor((v - escala.min) / (escala.max - escala.min));
 }
 
 const fmtPct = v => (v==null||isNaN(v)) ? '—' : v.toFixed(2) + '%';
 const fmtNum = v => (v==null||isNaN(v)) ? '—' : Math.round(v).toLocaleString('es-AR');
 
-function dibujarMapa(map, layer, stats) {
+function dibujarMapa(map, layer, stats, escala) {
   if (layer) map.removeLayer(layer);
   return L.geoJSON(geojsonData, {
     style: feature => {
       const gid = feature.properties.gid_dpto || feature.properties.GeoID;
       const s = stats.get(gid);
       return {
-        fillColor: s ? colorPorLC(s.lc_avg) : COLOR_SIN_DATO,
+        fillColor: s ? colorPorLC(s.lc_avg, escala) : COLOR_SIN_DATO,
         weight: 0.3, color: '#777',
         fillOpacity: s ? 0.82 : 0.15
       };
@@ -757,8 +767,18 @@ function refrescar() {
   statsMercado = agregarPorGeoID(filasMercado);
   statsEmpresa = agregarPorGeoID(filasEmpresa);
 
-  layerMercado = dibujarMapa(mapMercado, layerMercado, statsMercado);
-  layerEmpresa = dibujarMapa(mapEmpresa, layerEmpresa, statsEmpresa);
+  // Escalas INDEPENDIENTES
+  escalaMercado = calcularEscala(statsMercado);
+  escalaEmpresa = calcularEscala(statsEmpresa);
+
+  console.log(`Escala MERCADO: ${escalaMercado.min.toFixed(2)}% – ${escalaMercado.max.toFixed(2)}%`);
+  console.log(`Escala EMPRESA: ${escalaEmpresa.min.toFixed(2)}% – ${escalaEmpresa.max.toFixed(2)}%`);
+
+  actualizarLeyenda(escalaMercado, 'm');
+  actualizarLeyenda(escalaEmpresa, 'e');
+
+  layerMercado = dibujarMapa(mapMercado, layerMercado, statsMercado, escalaMercado);
+  layerEmpresa = dibujarMapa(mapEmpresa, layerEmpresa, statsEmpresa, escalaEmpresa);
 
   // KPIs
   const km = calcularKPIs(filasMercado);
