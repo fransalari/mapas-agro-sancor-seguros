@@ -132,15 +132,15 @@
     display: inline-block; margin-right: 8px;
     font-size: 22px; line-height: 1;
   }
-  /* Estados de color del diagnóstico */
-  .panel-centro.estado-bajar { background: linear-gradient(135deg, #f0faf3 0%, #d9f2e0 100%); }
-  .panel-centro.estado-bajar .panel-diagnostico { color: #1e7e3a; }
-  .panel-centro.estado-mantener { background: linear-gradient(135deg, #fefaee 0%, #fbf3d5 100%); }
-  .panel-centro.estado-mantener .panel-diagnostico { color: #856404; }
-  .panel-centro.estado-subir { background: linear-gradient(135deg, #fdf3f3 0%, #f8d7d7 100%); }
-  .panel-centro.estado-subir .panel-diagnostico { color: #b8202b; }
+  /* Estados del diagnóstico — todos en tonos neutros (descriptivos, no prescriptivos) */
   .panel-centro.estado-alineado { background: linear-gradient(135deg, #f7f8fa 0%, #e8e9ec 100%); }
-  .panel-centro.estado-alineado .panel-diagnostico { color: #555; }
+  .panel-centro.estado-alineado .panel-diagnostico { color: #2a3a4f; }
+  .panel-centro.estado-bajar { background: linear-gradient(135deg, #f7f8fa 0%, #e8e9ec 100%); }
+  .panel-centro.estado-bajar .panel-diagnostico { color: #2a3a4f; }
+  .panel-centro.estado-mantener { background: linear-gradient(135deg, #f7f8fa 0%, #e8e9ec 100%); }
+  .panel-centro.estado-mantener .panel-diagnostico { color: #2a3a4f; }
+  .panel-centro.estado-subir { background: linear-gradient(135deg, #f7f8fa 0%, #e8e9ec 100%); }
+  .panel-centro.estado-subir .panel-diagnostico { color: #2a3a4f; }
   .panel-explicacion {
     font-size: 12px; color: #555; line-height: 1.45;
     margin-top: 4px;
@@ -306,7 +306,7 @@
     </div>
 
     <div class="panel-centro estado-alineado" id="panel-centro">
-      <div class="panel-centro-titulo">Diagnóstico Comparativo</div>
+      <div class="panel-centro-titulo">Posición Relativa al Mercado</div>
       <div class="panel-diagnostico" id="panel-diagnostico">
         <span class="panel-diagnostico-icono" id="panel-icono">⏳</span>
         <span id="panel-veredicto">Cargando…</span>
@@ -382,14 +382,14 @@
 </div>
 
 <div class="disclaimer">
-  <strong>Cómo leer el diagnóstico:</strong>
-  <strong>LC Histórico</strong> es la siniestralidad observada (pérdida sobre suma asegurada). <strong>Tasa Teórica</strong> es la prima técnica sugerida (LC ajustado por CAT ÷ 0,6). El <strong>ΔLC</strong> y <strong>ΔTasa</strong> muestran cómo se posiciona la compañía respecto al mercado: positivo significa que la compañía está por encima del mercado. <strong>Las decisiones de tarifa deben considerar el LC subyacente</strong>, no solo la tasa de venta. Cada mapa usa una escala de color independiente para maximizar el contraste visual interno; para comparar valores absolutos entre mapas use los números. Material analítico de referencia.
+  <strong>Cómo leer los indicadores:</strong>
+  <strong>LC Histórico</strong> es la siniestralidad observada (pérdida sobre suma asegurada, ponderada por hectáreas). <strong>Tasa Teórica</strong> es la prima técnica de referencia (LC ajustado por CAT ÷ 0,6). El <strong>ΔLC</strong> y <strong>ΔTasa</strong> indican la posición porcentual de la compañía respecto al mercado consolidado: valores positivos indican que la compañía está por encima del mercado. Cada mapa usa una escala de color independiente para maximizar el contraste visual interno; para comparar valores absolutos entre mapas use los números. Material analítico de referencia; las decisiones tarifarias requieren considerar adicionalmente el perfil de cartera, el costo de capital, los gastos y la estrategia comercial de cada compañía.
 </div>
 
 <div id="status">Cargando datos…</div>
 
 <script>
-const GEOJSON_URL = 'https://raw.githubusercontent.com/fransalari/mapas-agro/main/admin_boundaries_vf.json';
+const GEOJSON_URL = 'https://raw.githubusercontent.com/fransalari/coberturas-agro/main/admin_boundaries_vf.json';
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQnn5QR-XWMbQu56h-1tscw-Cik5vTI5O7Do8jjBeby4MpAar0jw2_xQ6_SuIxUoOvE-opa_VlnjYcx/pub?gid=1613070223&single=true&output=csv';
 
 const ESCENARIO_DEFAULT = 'N (dinámico)';
@@ -886,77 +886,72 @@ function actualizarPanelInterpretativo(km, ke) {
     panel.classList.add('estado-alineado');
     iconoEl.textContent = '—';
     veredictoEl.textContent = 'Sin datos suficientes';
-    explicEl.innerHTML = 'No hay datos para calcular el diagnóstico con los filtros actuales.';
+    explicEl.innerHTML = 'No hay datos para calcular la posición relativa con los filtros actuales.';
     return;
   }
 
-  const compNombre = `Compañía ${filtros.empresa}`;
-  const umbral = 2; // % de tolerancia para considerar "alineado"
+  const umbral = 2; // tolerancia para considerar "similar al mercado"
+  panel.classList.add('estado-alineado');
 
-  // ===== Lógica del diagnóstico =====
-  // Caso A: LC compañía MENOR al mercado (cartera más estable)
-  //   → Tiene margen real para bajar tasa
-  // Caso B: LC compañía MAYOR al mercado (cartera más riesgosa)
-  //   → Su tasa debería ser mayor; verificar si la cobra
-  // Caso C: LC similar al mercado (~mismo riesgo)
-  //   → La tasa debería estar alineada
+  // Clasificar cada delta en una de 3 categorías: menor, similar, mayor
+  const catLC = deltaLC < -umbral ? 'menor' : (deltaLC > umbral ? 'mayor' : 'similar');
+  const catTasa = deltaTasa < -umbral ? 'menor' : (deltaTasa > umbral ? 'mayor' : 'similar');
 
-  if (Math.abs(deltaLC) < umbral && Math.abs(deltaTasa) < umbral) {
-    // Todo alineado
-    panel.classList.add('estado-alineado');
-    iconoEl.textContent = '⚖';
-    veredictoEl.textContent = 'Cartera alineada con el mercado';
-    explicEl.innerHTML = `Tu LC histórico y tu tasa están en línea con el mercado.<br><strong>Posición correcta</strong>: tu cartera no presenta diferencias significativas de riesgo ni de pricing.`;
+  // Texto descriptivo factual
+  let icono = '·';
+  let titulo = '';
+  let detalle = '';
+
+  // Mapeo de icono según las dos categorías combinadas
+  if (catLC === 'similar' && catTasa === 'similar') {
+    icono = '≈';
+    titulo = 'Posición similar al mercado';
+    detalle = `LC y tasa de la compañía no muestran diferencias significativas respecto al mercado consolidado.`;
   }
-  else if (deltaLC <= -umbral && deltaTasa <= -umbral) {
-    // LC más bajo Y tasa más baja → coherente y oportunidad
-    panel.classList.add('estado-mantener');
-    iconoEl.textContent = '✓';
-    veredictoEl.textContent = 'Cartera de menor riesgo bien tarifada';
-    explicEl.innerHTML = `Tu LC es <strong>${Math.abs(deltaLC).toFixed(1)}% menor</strong> que el mercado y tu tasa también es menor. <strong>Coherente</strong>: estás cobrando lo justo para tu menor exposición.<br><span style="color:#888">Oportunidad: podrías capturar más mercado con esta ventaja competitiva.</span>`;
+  else if (catLC === 'menor' && catTasa === 'menor') {
+    icono = '↘';
+    titulo = 'LC y tasa por debajo del mercado';
+    detalle = `Cartera con LC <strong>${Math.abs(deltaLC).toFixed(1)}% menor</strong> y tasa <strong>${Math.abs(deltaTasa).toFixed(1)}% menor</strong> que el mercado consolidado.`;
   }
-  else if (deltaLC <= -umbral && deltaTasa > -umbral) {
-    // LC más bajo pero tasa NO bajó → sobre-tarifado, podés bajar
-    panel.classList.add('estado-bajar');
-    iconoEl.textContent = '↓';
-    veredictoEl.textContent = 'Podés bajar tu tasa';
-    explicEl.innerHTML = `Tu LC es <strong>${Math.abs(deltaLC).toFixed(1)}% menor</strong> que el mercado pero tu tasa no refleja esa ventaja. <strong>Estás cobrando de más</strong> para tu nivel real de riesgo.<br><span style="color:#888">Acción sugerida: reducir tasa hasta ${Math.abs(deltaLC).toFixed(1)}% para ganar competitividad sin sacrificar rentabilidad.</span>`;
+  else if (catLC === 'mayor' && catTasa === 'mayor') {
+    icono = '↗';
+    titulo = 'LC y tasa por encima del mercado';
+    detalle = `Cartera con LC <strong>${deltaLC.toFixed(1)}% mayor</strong> y tasa <strong>${deltaTasa.toFixed(1)}% mayor</strong> que el mercado consolidado.`;
   }
-  else if (deltaLC >= umbral && deltaTasa >= umbral && Math.abs(deltaLC - deltaTasa) < umbral) {
-    // LC más alto Y tasa más alta proporcionalmente → posición técnicamente correcta
-    panel.classList.add('estado-mantener');
-    iconoEl.textContent = '⚖';
-    veredictoEl.textContent = 'Mayor riesgo correctamente tarifado';
-    explicEl.innerHTML = `Tu cartera tiene LC <strong>${deltaLC.toFixed(1)}% mayor</strong> que el mercado y tu tasa también es mayor. <strong>Posición correcta</strong>: tu prima refleja tu mayor exposición.<br><span style="color:#888">NO bajar la tasa: el menor precio del mercado no aplica a tu cartera porque tu riesgo es mayor.</span>`;
+  else if (catLC === 'similar' && catTasa === 'mayor') {
+    icono = '◐';
+    titulo = 'Tasa por encima del mercado';
+    detalle = `LC de la compañía similar al mercado, pero tasa <strong>${deltaTasa.toFixed(1)}% mayor</strong>.`;
   }
-  else if (deltaLC >= umbral && deltaTasa < deltaLC - umbral) {
-    // LC más alto pero tasa NO acompaña → estás subtarifando
-    panel.classList.add('estado-subir');
-    iconoEl.textContent = '↑';
-    veredictoEl.textContent = 'Debés subir tu tasa';
-    explicEl.innerHTML = `Tu LC es <strong>${deltaLC.toFixed(1)}% mayor</strong> que el mercado pero tu tasa solo refleja un ${deltaTasa.toFixed(1)}% de diferencia. <strong>Estás cobrando poco para tu nivel de riesgo</strong>.<br><span style="color:#888">Acción sugerida: aumentar tasa al menos ${(deltaLC - deltaTasa).toFixed(1)}% adicional para cubrir adecuadamente la siniestralidad esperada.</span>`;
+  else if (catLC === 'similar' && catTasa === 'menor') {
+    icono = '◐';
+    titulo = 'Tasa por debajo del mercado';
+    detalle = `LC de la compañía similar al mercado, pero tasa <strong>${Math.abs(deltaTasa).toFixed(1)}% menor</strong>.`;
   }
-  else if (deltaLC < umbral && deltaTasa >= umbral) {
-    // LC similar pero tasa más alta → sobre-tarifado sin justificación
-    panel.classList.add('estado-bajar');
-    iconoEl.textContent = '↓';
-    veredictoEl.textContent = 'Podés bajar tu tasa';
-    explicEl.innerHTML = `Tu LC es similar al del mercado pero tu tasa es <strong>${deltaTasa.toFixed(1)}% mayor</strong>. <strong>Estás cobrando de más</strong> sin que el riesgo lo justifique.<br><span style="color:#888">Acción sugerida: reducir tasa para alinear con el mercado y mejorar competitividad.</span>`;
+  else if (catLC === 'mayor' && catTasa === 'similar') {
+    icono = '◑';
+    titulo = 'LC por encima del mercado';
+    detalle = `LC de la compañía <strong>${deltaLC.toFixed(1)}% mayor</strong> que el mercado, mientras que la tasa es similar.`;
   }
-  else if (deltaLC < umbral && deltaTasa <= -umbral) {
-    // LC similar pero tasa MENOR → estás subtarifando
-    panel.classList.add('estado-subir');
-    iconoEl.textContent = '↑';
-    veredictoEl.textContent = 'Debés subir tu tasa';
-    explicEl.innerHTML = `Tu LC es similar al del mercado pero tu tasa es <strong>${Math.abs(deltaTasa).toFixed(1)}% menor</strong>. <strong>Estás subtarifando</strong> respecto al riesgo real.<br><span style="color:#888">Acción sugerida: aumentar tasa hasta el nivel del mercado para sostener rentabilidad.</span>`;
+  else if (catLC === 'menor' && catTasa === 'similar') {
+    icono = '◑';
+    titulo = 'LC por debajo del mercado';
+    detalle = `LC de la compañía <strong>${Math.abs(deltaLC).toFixed(1)}% menor</strong> que el mercado, mientras que la tasa es similar.`;
   }
-  else {
-    // Caso residual (combinaciones raras)
-    panel.classList.add('estado-alineado');
-    iconoEl.textContent = '?';
-    veredictoEl.textContent = 'Situación a revisar';
-    explicEl.innerHTML = `La combinación de LC y tasa de tu cartera vs mercado no encaja en un patrón típico. Revisar caso por caso con los KPIs detallados de cada mapa.`;
+  else if (catLC === 'mayor' && catTasa === 'menor') {
+    icono = '⇕';
+    titulo = 'LC mayor pero tasa menor que mercado';
+    detalle = `Cartera con LC <strong>${deltaLC.toFixed(1)}% mayor</strong> y tasa <strong>${Math.abs(deltaTasa).toFixed(1)}% menor</strong> que el mercado.`;
   }
+  else if (catLC === 'menor' && catTasa === 'mayor') {
+    icono = '⇕';
+    titulo = 'LC menor pero tasa mayor que mercado';
+    detalle = `Cartera con LC <strong>${Math.abs(deltaLC).toFixed(1)}% menor</strong> y tasa <strong>${deltaTasa.toFixed(1)}% mayor</strong> que el mercado.`;
+  }
+
+  iconoEl.textContent = icono;
+  veredictoEl.textContent = titulo;
+  explicEl.innerHTML = detalle;
 }
 
 function refrescar() {
