@@ -50,8 +50,6 @@
   }
   .filtro select:hover { border-color: #999; }
   .filtro select:focus { outline: none; border-color: #1F4E78; box-shadow: 0 0 0 2px rgba(31,78,120,.1); }
-
-  /* Filtro de compañía destacado y separado a la derecha */
   .filtro.empresa {
     position: relative;
     padding-left: 16px;
@@ -61,9 +59,7 @@
     border: 2px solid #C8102E; font-weight: 700; color: #C8102E;
     background-color: #FFF5F7;
   }
-  .filtro.empresa .filtro-label {
-    color: #C8102E; font-weight: 800;
-  }
+  .filtro.empresa .filtro-label { color: #C8102E; font-weight: 800; }
   .filtro.empresa::before {
     content: 'Solo aplica al mapa derecho ↓';
     position: absolute; top: -22px; left: 16px; right: 0;
@@ -71,6 +67,104 @@
     text-transform: uppercase; letter-spacing: 0.4px;
   }
 
+  /* ============================================================
+     PANEL INTERPRETATIVO PRINCIPAL (reemplaza al Ajuste Sugerido)
+     ============================================================ */
+  .panel-interpretacion {
+    margin: 14px 28px;
+    background: white; border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    overflow: hidden;
+  }
+  .panel-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1.6fr;
+    align-items: stretch;
+  }
+  /* Columnas laterales con métricas */
+  .panel-lado {
+    padding: 18px 22px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .panel-lado.mercado { background: linear-gradient(135deg, #f4f8fb 0%, #e8eff5 100%); }
+  .panel-lado.empresa { background: linear-gradient(135deg, #fdf5f7 0%, #f9e8ec 100%); }
+  .panel-lado-titulo {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.6px;
+    text-transform: uppercase; opacity: 0.7;
+  }
+  .panel-lado.mercado .panel-lado-titulo { color: #1F4E78; }
+  .panel-lado.empresa .panel-lado-titulo { color: #C8102E; }
+  .panel-lado-sub { font-size: 11px; color: #888; margin-top: -6px; }
+  .panel-metricas-mini {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;
+  }
+  .metric-mini {
+    background: white; padding: 7px 10px; border-radius: 5px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  }
+  .metric-mini-label {
+    font-size: 9px; color: #888; font-weight: 700;
+    letter-spacing: 0.3px; text-transform: uppercase;
+  }
+  .metric-mini-valor {
+    font-size: 18px; font-weight: 800; color: #1a1a1a;
+    letter-spacing: -0.4px; line-height: 1.1; margin-top: 2px;
+  }
+  .panel-lado.mercado .metric-mini-valor { color: #1F4E78; }
+  .panel-lado.empresa .metric-mini-valor { color: #C8102E; }
+
+  /* Columna central: diagnóstico */
+  .panel-centro {
+    padding: 18px 24px;
+    display: flex; flex-direction: column; justify-content: center;
+    text-align: center;
+    border-left: 2px solid #f0f0f0;
+    border-right: 2px solid #f0f0f0;
+  }
+  .panel-centro-titulo {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.6px;
+    text-transform: uppercase; color: #555; margin-bottom: 6px;
+  }
+  .panel-diagnostico {
+    font-size: 22px; font-weight: 800; line-height: 1.15;
+    letter-spacing: -0.4px; margin-bottom: 8px;
+  }
+  .panel-diagnostico-icono {
+    display: inline-block; margin-right: 8px;
+    font-size: 22px; line-height: 1;
+  }
+  /* Estados de color del diagnóstico */
+  .panel-centro.estado-bajar { background: linear-gradient(135deg, #f0faf3 0%, #d9f2e0 100%); }
+  .panel-centro.estado-bajar .panel-diagnostico { color: #1e7e3a; }
+  .panel-centro.estado-mantener { background: linear-gradient(135deg, #fefaee 0%, #fbf3d5 100%); }
+  .panel-centro.estado-mantener .panel-diagnostico { color: #856404; }
+  .panel-centro.estado-subir { background: linear-gradient(135deg, #fdf3f3 0%, #f8d7d7 100%); }
+  .panel-centro.estado-subir .panel-diagnostico { color: #b8202b; }
+  .panel-centro.estado-alineado { background: linear-gradient(135deg, #f7f8fa 0%, #e8e9ec 100%); }
+  .panel-centro.estado-alineado .panel-diagnostico { color: #555; }
+  .panel-explicacion {
+    font-size: 12px; color: #555; line-height: 1.45;
+    margin-top: 4px;
+  }
+  .panel-explicacion strong { color: #1a1a1a; }
+  .panel-numeros-clave {
+    display: flex; justify-content: center; gap: 18px;
+    margin-top: 12px; padding-top: 10px;
+    border-top: 1px solid rgba(0,0,0,.08);
+  }
+  .num-clave { text-align: center; }
+  .num-clave-label {
+    font-size: 9px; color: #777; font-weight: 700;
+    letter-spacing: 0.3px; text-transform: uppercase;
+  }
+  .num-clave-valor {
+    font-size: 17px; font-weight: 800;
+    letter-spacing: -0.3px; margin-top: 2px;
+  }
+  .num-clave-mas { color: #C8102E; }
+  .num-clave-menos { color: #28a745; }
+  .num-clave-neutro { color: #555; }
+
+  /* Mapas */
   .comparativo-wrap {
     display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
     padding: 14px 28px; align-items: start;
@@ -100,50 +194,7 @@
   .kpi-c-valor { font-size: 19px; font-weight: 700; color: #1a1a1a; line-height: 1; }
   .kpi-c-extra { font-size: 9px; color: #999; margin-top: 3px; }
 
-  /* Tasa diferencial */
-  .diferencial-box {
-    margin: 14px 28px;
-    background: white; border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,.08);
-    padding: 18px 24px;
-    display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 24px;
-    align-items: center;
-  }
-  .dif-lateral {
-    text-align: center;
-  }
-  .dif-titulo {
-    font-size: 10px; font-weight: 700; color: #888;
-    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
-  }
-  .dif-valor {
-    font-size: 30px; font-weight: 800; letter-spacing: -1px;
-  }
-  .dif-mercado .dif-valor { color: #1F4E78; }
-  .dif-empresa .dif-valor { color: #C8102E; }
-  .dif-central {
-    text-align: center;
-    border-left: 2px solid #eee;
-    border-right: 2px solid #eee;
-    padding: 0 16px;
-  }
-  .dif-central .dif-titulo { font-size: 11px; color: #555; }
-  .dif-central-valor {
-    font-size: 48px; font-weight: 900; letter-spacing: -2px;
-    line-height: 1;
-  }
-  .dif-aumentar { color: #C8102E; }
-  .dif-bajar { color: #28a745; }
-  .dif-neutro { color: #6c757d; }
-  .dif-central-extra {
-    font-size: 13px; color: #555; margin-top: 4px;
-    font-weight: 600;
-  }
-  .dif-central-help {
-    font-size: 11px; color: #888; margin-top: 8px; line-height: 1.4;
-    max-width: 280px; margin-left: auto; margin-right: auto;
-  }
-
+  /* Leyenda */
   .legend {
     background: white; padding: 9px 11px;
     border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.15);
@@ -189,7 +240,7 @@
 
   @media (max-width: 1100px) {
     .comparativo-wrap { grid-template-columns: 1fr; }
-    .diferencial-box { grid-template-columns: 1fr; }
+    .panel-grid { grid-template-columns: 1fr; }
     .filtros-row { grid-template-columns: 1fr 1fr; }
   }
 </style>
@@ -236,22 +287,61 @@
   </div>
 </div>
 
-<div class="diferencial-box">
-  <div class="dif-lateral dif-mercado">
-    <div class="dif-titulo">Tasa Mercado</div>
-    <div class="dif-valor" id="dif-mercado">—</div>
-    <div class="dif-central-help" style="margin-top:4px">Todas las compañías consolidadas</div>
-  </div>
-  <div class="dif-lateral dif-empresa">
-    <div class="dif-titulo" id="dif-empresa-titulo">Tasa Compañía</div>
-    <div class="dif-valor" id="dif-empresa">—</div>
-    <div class="dif-central-help" style="margin-top:4px" id="dif-empresa-extra">Solo cartera propia</div>
-  </div>
-  <div class="dif-central">
-    <div class="dif-titulo">Ajuste Sugerido</div>
-    <div class="dif-central-valor" id="dif-pct">—</div>
-    <div class="dif-central-extra" id="dif-leyenda">—</div>
-    <div class="dif-central-help">Si la compañía vende por debajo del mercado, debería aumentar su tasa el porcentaje indicado para alinearse</div>
+<!-- PANEL INTERPRETATIVO PRINCIPAL -->
+<div class="panel-interpretacion">
+  <div class="panel-grid">
+    <div class="panel-lado mercado">
+      <div class="panel-lado-titulo">Mercado consolidado</div>
+      <div class="panel-lado-sub">Todas las compañías</div>
+      <div class="panel-metricas-mini">
+        <div class="metric-mini">
+          <div class="metric-mini-label">LC Histórico</div>
+          <div class="metric-mini-valor" id="m-lc">—</div>
+        </div>
+        <div class="metric-mini">
+          <div class="metric-mini-label">Tasa Teórica</div>
+          <div class="metric-mini-valor" id="m-tasa">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-centro estado-alineado" id="panel-centro">
+      <div class="panel-centro-titulo">Diagnóstico Comparativo</div>
+      <div class="panel-diagnostico" id="panel-diagnostico">
+        <span class="panel-diagnostico-icono" id="panel-icono">⏳</span>
+        <span id="panel-veredicto">Cargando…</span>
+      </div>
+      <div class="panel-explicacion" id="panel-explicacion">—</div>
+      <div class="panel-numeros-clave">
+        <div class="num-clave">
+          <div class="num-clave-label">ΔLC Histórico</div>
+          <div class="num-clave-valor" id="delta-lc">—</div>
+        </div>
+        <div class="num-clave">
+          <div class="num-clave-label">ΔTasa</div>
+          <div class="num-clave-valor" id="delta-tasa">—</div>
+        </div>
+        <div class="num-clave">
+          <div class="num-clave-label">Cuota Mercado</div>
+          <div class="num-clave-valor num-clave-neutro" id="cuota-mercado">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-lado empresa">
+      <div class="panel-lado-titulo" id="panel-empresa-titulo">Compañía 5</div>
+      <div class="panel-lado-sub">Cartera específica</div>
+      <div class="panel-metricas-mini">
+        <div class="metric-mini">
+          <div class="metric-mini-label">LC Histórico</div>
+          <div class="metric-mini-valor" id="e-lc">—</div>
+        </div>
+        <div class="metric-mini">
+          <div class="metric-mini-label">Tasa Teórica</div>
+          <div class="metric-mini-valor" id="e-tasa">—</div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -292,13 +382,14 @@
 </div>
 
 <div class="disclaimer">
-  <strong>Aclaración:</strong> Los valores son indicadores estadísticos sobre información histórica de campañas previas. La <strong>Tasa Mercado</strong> consolida todas las compañías del mercado argentino. La <strong>Tasa Compañía</strong> corresponde a la cartera específica seleccionada. El <strong>Ajuste Sugerido</strong> = (Tasa Mercado − Tasa Compañía) / Tasa Compañía × 100%. Valores positivos sugieren que la compañía debería aumentar su tasa; negativos indican que podría reducirla. Cada mapa usa una <strong>escala de color independiente</strong>: el rango se ajusta a los valores del propio mapa para maximizar el contraste visual interno. Para comparar valores absolutos entre mapas use los KPIs numéricos.
+  <strong>Cómo leer el diagnóstico:</strong>
+  <strong>LC Histórico</strong> es la siniestralidad observada (pérdida sobre suma asegurada). <strong>Tasa Teórica</strong> es la prima técnica sugerida (LC ajustado por CAT ÷ 0,6). El <strong>ΔLC</strong> y <strong>ΔTasa</strong> muestran cómo se posiciona la compañía respecto al mercado: positivo significa que la compañía está por encima del mercado. <strong>Las decisiones de tarifa deben considerar el LC subyacente</strong>, no solo la tasa de venta. Cada mapa usa una escala de color independiente para maximizar el contraste visual interno; para comparar valores absolutos entre mapas use los números. Material analítico de referencia.
 </div>
 
 <div id="status">Cargando datos…</div>
 
 <script>
-const GEOJSON_URL = 'https://raw.githubusercontent.com/fransalari/mapas-agro/main/admin_boundaries_vf.json';
+const GEOJSON_URL = 'https://raw.githubusercontent.com/fransalari/coberturas-agro/main/admin_boundaries_vf.json';
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQnn5QR-XWMbQu56h-1tscw-Cik5vTI5O7Do8jjBeby4MpAar0jw2_xQ6_SuIxUoOvE-opa_VlnjYcx/pub?gid=1613070223&single=true&output=csv';
 
 const ESCENARIO_DEFAULT = 'N (dinámico)';
@@ -312,8 +403,6 @@ const PALETA = [
 ];
 const COLOR_SIN_DATO = '#e6e6e6';
 
-// Escalas INDEPENDIENTES por mapa (Opción D)
-// Cada mapa calcula su propio min/max basado en los datos que muestra
 let escalaMercado = { min: 0, max: 5 };
 let escalaEmpresa = { min: 0, max: 5 };
 
@@ -324,7 +413,7 @@ let layerMercado = null, layerEmpresa = null;
 let statsMercado = new Map(), statsEmpresa = new Map();
 
 const filtros = {
-  empresa: '5',  // EMPRESA 5 por defecto (Sancor)
+  empresa: '5',
   provincia: '', departamento: '', cultivo: '', cobertura: '',
   escenario: ESCENARIO_DEFAULT
 };
@@ -377,7 +466,6 @@ function initMaps() {
     attribution: '© OpenStreetMap · CARTO', subdomains: 'abcd', maxZoom: 18
   }).addTo(mapEmpresa);
 
-  // Sincronizar mapas
   let syncing = false;
   function syncFrom(src, dst) {
     src.on('move zoom', () => {
@@ -390,7 +478,6 @@ function initMaps() {
   syncFrom(mapMercado, mapEmpresa);
   syncFrom(mapEmpresa, mapMercado);
 
-  // Leyendas (con sufijo m/e para identificar el mapa)
   function addLegend(map, sufijo) {
     const legend = L.control({ position: 'bottomright' });
     legend.onAdd = function() {
@@ -433,7 +520,6 @@ async function cargarDatos() {
   });
 
   console.log('Columnas:', parsed.meta.fields);
-  console.log('Primera fila:', parsed.data[0]);
 
   const camposNumericos = [
     'geo_id', 'registros', 'anios_considerados', 'hectareas',
@@ -667,9 +753,6 @@ function calcularKPIs(filas) {
   };
 }
 
-// ============================================================
-// OPCIÓN D: Escala INDEPENDIENTE por mapa
-// ============================================================
 function calcularEscala(stats) {
   const vals = [];
   for (const s of stats.values()) {
@@ -677,10 +760,8 @@ function calcularEscala(stats) {
   }
   if (!vals.length) return { min: 0, max: 1 };
   vals.sort((a,b) => a-b);
-  // Percentiles 5 y 95 para evitar outliers
   let min = vals[Math.floor(vals.length * 0.05)];
   let max = vals[Math.floor(vals.length * 0.95)];
-  // Asegurar mínimo de rango razonable (evitar escala degenerada)
   if (max <= min) max = min + 0.5;
   if (max - min < 0.5) max = min + 0.5;
   return { min, max };
@@ -718,6 +799,11 @@ function colorPorLC(v, escala) {
 }
 
 const fmtPct = v => (v==null||isNaN(v)) ? '—' : v.toFixed(2) + '%';
+const fmtPctSigno = v => {
+  if (v==null||isNaN(v)) return '—';
+  const s = v > 0 ? '+' : '';
+  return s + v.toFixed(2) + '%';
+};
 const fmtNum = v => (v==null||isNaN(v)) ? '—' : Math.round(v).toLocaleString('es-AR');
 
 function dibujarMapa(map, layer, stats, escala) {
@@ -758,6 +844,121 @@ function dibujarMapa(map, layer, stats, escala) {
   }).addTo(map);
 }
 
+// ============================================================
+// PANEL INTERPRETATIVO — Diagnóstico inteligente
+// ============================================================
+function actualizarPanelInterpretativo(km, ke) {
+  // Mostrar métricas laterales
+  document.getElementById('m-lc').textContent = fmtPct(km.lc);
+  document.getElementById('m-tasa').textContent = fmtPct(km.tasa);
+  document.getElementById('e-lc').textContent = fmtPct(ke.lc);
+  document.getElementById('e-tasa').textContent = fmtPct(ke.tasa);
+
+  const cuota = km.ha > 0 ? (ke.ha / km.ha * 100) : 0;
+  document.getElementById('cuota-mercado').textContent = cuota.toFixed(1) + '%';
+
+  // Deltas: positivo = compañía está POR ENCIMA del mercado
+  let deltaLC = null, deltaTasa = null;
+  if (km.lc != null && ke.lc != null) deltaLC = ((ke.lc - km.lc) / km.lc) * 100;
+  if (km.tasa != null && ke.tasa != null) deltaTasa = ((ke.tasa - km.tasa) / km.tasa) * 100;
+
+  const dLCel = document.getElementById('delta-lc');
+  const dTel = document.getElementById('delta-tasa');
+  if (deltaLC != null) {
+    dLCel.textContent = fmtPctSigno(deltaLC);
+    dLCel.className = 'num-clave-valor ' + (deltaLC > 0.5 ? 'num-clave-mas' : (deltaLC < -0.5 ? 'num-clave-menos' : 'num-clave-neutro'));
+  } else { dLCel.textContent = '—'; dLCel.className = 'num-clave-valor num-clave-neutro'; }
+  if (deltaTasa != null) {
+    dTel.textContent = fmtPctSigno(deltaTasa);
+    dTel.className = 'num-clave-valor ' + (deltaTasa > 0.5 ? 'num-clave-mas' : (deltaTasa < -0.5 ? 'num-clave-menos' : 'num-clave-neutro'));
+  } else { dTel.textContent = '—'; dTel.className = 'num-clave-valor num-clave-neutro'; }
+
+  // Diagnóstico interpretativo
+  const panel = document.getElementById('panel-centro');
+  const iconoEl = document.getElementById('panel-icono');
+  const veredictoEl = document.getElementById('panel-veredicto');
+  const explicEl = document.getElementById('panel-explicacion');
+
+  // Limpiar clases anteriores
+  panel.classList.remove('estado-bajar','estado-mantener','estado-subir','estado-alineado');
+
+  if (deltaLC == null || deltaTasa == null) {
+    panel.classList.add('estado-alineado');
+    iconoEl.textContent = '—';
+    veredictoEl.textContent = 'Sin datos suficientes';
+    explicEl.innerHTML = 'No hay datos para calcular el diagnóstico con los filtros actuales.';
+    return;
+  }
+
+  const compNombre = `Compañía ${filtros.empresa}`;
+  const umbral = 2; // % de tolerancia para considerar "alineado"
+
+  // ===== Lógica del diagnóstico =====
+  // Caso A: LC compañía MENOR al mercado (cartera más estable)
+  //   → Tiene margen real para bajar tasa
+  // Caso B: LC compañía MAYOR al mercado (cartera más riesgosa)
+  //   → Su tasa debería ser mayor; verificar si la cobra
+  // Caso C: LC similar al mercado (~mismo riesgo)
+  //   → La tasa debería estar alineada
+
+  if (Math.abs(deltaLC) < umbral && Math.abs(deltaTasa) < umbral) {
+    // Todo alineado
+    panel.classList.add('estado-alineado');
+    iconoEl.textContent = '⚖';
+    veredictoEl.textContent = 'Cartera alineada con el mercado';
+    explicEl.innerHTML = `Tu LC histórico y tu tasa están en línea con el mercado.<br><strong>Posición correcta</strong>: tu cartera no presenta diferencias significativas de riesgo ni de pricing.`;
+  }
+  else if (deltaLC <= -umbral && deltaTasa <= -umbral) {
+    // LC más bajo Y tasa más baja → coherente y oportunidad
+    panel.classList.add('estado-mantener');
+    iconoEl.textContent = '✓';
+    veredictoEl.textContent = 'Cartera de menor riesgo bien tarifada';
+    explicEl.innerHTML = `Tu LC es <strong>${Math.abs(deltaLC).toFixed(1)}% menor</strong> que el mercado y tu tasa también es menor. <strong>Coherente</strong>: estás cobrando lo justo para tu menor exposición.<br><span style="color:#888">Oportunidad: podrías capturar más mercado con esta ventaja competitiva.</span>`;
+  }
+  else if (deltaLC <= -umbral && deltaTasa > -umbral) {
+    // LC más bajo pero tasa NO bajó → sobre-tarifado, podés bajar
+    panel.classList.add('estado-bajar');
+    iconoEl.textContent = '↓';
+    veredictoEl.textContent = 'Podés bajar tu tasa';
+    explicEl.innerHTML = `Tu LC es <strong>${Math.abs(deltaLC).toFixed(1)}% menor</strong> que el mercado pero tu tasa no refleja esa ventaja. <strong>Estás cobrando de más</strong> para tu nivel real de riesgo.<br><span style="color:#888">Acción sugerida: reducir tasa hasta ${Math.abs(deltaLC).toFixed(1)}% para ganar competitividad sin sacrificar rentabilidad.</span>`;
+  }
+  else if (deltaLC >= umbral && deltaTasa >= umbral && Math.abs(deltaLC - deltaTasa) < umbral) {
+    // LC más alto Y tasa más alta proporcionalmente → posición técnicamente correcta
+    panel.classList.add('estado-mantener');
+    iconoEl.textContent = '⚖';
+    veredictoEl.textContent = 'Mayor riesgo correctamente tarifado';
+    explicEl.innerHTML = `Tu cartera tiene LC <strong>${deltaLC.toFixed(1)}% mayor</strong> que el mercado y tu tasa también es mayor. <strong>Posición correcta</strong>: tu prima refleja tu mayor exposición.<br><span style="color:#888">NO bajar la tasa: el menor precio del mercado no aplica a tu cartera porque tu riesgo es mayor.</span>`;
+  }
+  else if (deltaLC >= umbral && deltaTasa < deltaLC - umbral) {
+    // LC más alto pero tasa NO acompaña → estás subtarifando
+    panel.classList.add('estado-subir');
+    iconoEl.textContent = '↑';
+    veredictoEl.textContent = 'Debés subir tu tasa';
+    explicEl.innerHTML = `Tu LC es <strong>${deltaLC.toFixed(1)}% mayor</strong> que el mercado pero tu tasa solo refleja un ${deltaTasa.toFixed(1)}% de diferencia. <strong>Estás cobrando poco para tu nivel de riesgo</strong>.<br><span style="color:#888">Acción sugerida: aumentar tasa al menos ${(deltaLC - deltaTasa).toFixed(1)}% adicional para cubrir adecuadamente la siniestralidad esperada.</span>`;
+  }
+  else if (deltaLC < umbral && deltaTasa >= umbral) {
+    // LC similar pero tasa más alta → sobre-tarifado sin justificación
+    panel.classList.add('estado-bajar');
+    iconoEl.textContent = '↓';
+    veredictoEl.textContent = 'Podés bajar tu tasa';
+    explicEl.innerHTML = `Tu LC es similar al del mercado pero tu tasa es <strong>${deltaTasa.toFixed(1)}% mayor</strong>. <strong>Estás cobrando de más</strong> sin que el riesgo lo justifique.<br><span style="color:#888">Acción sugerida: reducir tasa para alinear con el mercado y mejorar competitividad.</span>`;
+  }
+  else if (deltaLC < umbral && deltaTasa <= -umbral) {
+    // LC similar pero tasa MENOR → estás subtarifando
+    panel.classList.add('estado-subir');
+    iconoEl.textContent = '↑';
+    veredictoEl.textContent = 'Debés subir tu tasa';
+    explicEl.innerHTML = `Tu LC es similar al del mercado pero tu tasa es <strong>${Math.abs(deltaTasa).toFixed(1)}% menor</strong>. <strong>Estás subtarifando</strong> respecto al riesgo real.<br><span style="color:#888">Acción sugerida: aumentar tasa hasta el nivel del mercado para sostener rentabilidad.</span>`;
+  }
+  else {
+    // Caso residual (combinaciones raras)
+    panel.classList.add('estado-alineado');
+    iconoEl.textContent = '?';
+    veredictoEl.textContent = 'Situación a revisar';
+    explicEl.innerHTML = `La combinación de LC y tasa de tu cartera vs mercado no encaja en un patrón típico. Revisar caso por caso con los KPIs detallados de cada mapa.`;
+  }
+}
+
 function refrescar() {
   if (!geojsonData) return;
 
@@ -767,7 +968,6 @@ function refrescar() {
   statsMercado = agregarPorGeoID(filasMercado);
   statsEmpresa = agregarPorGeoID(filasEmpresa);
 
-  // Escalas INDEPENDIENTES
   escalaMercado = calcularEscala(statsMercado);
   escalaEmpresa = calcularEscala(statsEmpresa);
 
@@ -780,15 +980,14 @@ function refrescar() {
   layerMercado = dibujarMapa(mapMercado, layerMercado, statsMercado, escalaMercado);
   layerEmpresa = dibujarMapa(mapEmpresa, layerEmpresa, statsEmpresa, escalaEmpresa);
 
-  // KPIs
   const km = calcularKPIs(filasMercado);
   const ke = calcularKPIs(filasEmpresa);
 
+  // KPIs detallados debajo de cada mapa
   document.getElementById('kpi-m-lc').textContent = fmtPct(km.lc);
   document.getElementById('kpi-m-cat').textContent = fmtPct(km.cat);
   document.getElementById('kpi-m-tasa').textContent = fmtPct(km.tasa);
   document.getElementById('kpi-m-ha').textContent = fmtNum(km.ha);
-
   document.getElementById('kpi-e-lc').textContent = fmtPct(ke.lc);
   document.getElementById('kpi-e-cat').textContent = fmtPct(ke.cat);
   document.getElementById('kpi-e-tasa').textContent = fmtPct(ke.tasa);
@@ -798,35 +997,12 @@ function refrescar() {
   document.getElementById('titulo-mercado-ha').textContent = `${fmtNum(km.ha)} ha`;
   document.getElementById('titulo-empresa').textContent = `Compañía ${filtros.empresa}`;
   document.getElementById('titulo-empresa-ha').textContent = `${fmtNum(ke.ha)} ha (${cuota.toFixed(1)}% del mercado)`;
+  document.getElementById('panel-empresa-titulo').textContent = `Compañía ${filtros.empresa}`;
 
-  // Tasa diferencial
-  document.getElementById('dif-mercado').textContent = fmtPct(km.tasa);
-  document.getElementById('dif-empresa').textContent = fmtPct(ke.tasa);
-  document.getElementById('dif-empresa-titulo').textContent = `Tasa Compañía ${filtros.empresa}`;
+  // Panel interpretativo
+  actualizarPanelInterpretativo(km, ke);
 
-  const difEl = document.getElementById('dif-pct');
-  const legEl = document.getElementById('dif-leyenda');
-  if (km.tasa != null && ke.tasa != null && ke.tasa > 0) {
-    const dif = ((km.tasa - ke.tasa) / ke.tasa) * 100;
-    const signo = dif > 0 ? '+' : '';
-    difEl.textContent = signo + dif.toFixed(2) + '%';
-    difEl.className = 'dif-central-valor';
-    if (Math.abs(dif) < 1) {
-      difEl.classList.add('dif-neutro');
-      legEl.textContent = 'Alineado con el mercado';
-    } else if (dif > 0) {
-      difEl.classList.add('dif-aumentar');
-      legEl.textContent = `Aumentar tasa ${dif.toFixed(1)}% para alinear`;
-    } else {
-      difEl.classList.add('dif-bajar');
-      legEl.textContent = `Tasa por encima del mercado ${Math.abs(dif).toFixed(1)}%`;
-    }
-  } else {
-    difEl.textContent = '—';
-    legEl.textContent = '—';
-  }
-
-  // Zoom según filtro
+  // Zoom
   if (filtros.departamento) {
     const feat = geojsonData.features.find(f => {
       const d = f.properties.nam_dpto, p = f.properties.nam_prov;
