@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SANCOR SEGUROS AGRO · Comparativo Mercado vs Compañía</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, sans-serif;
+    background: #f5f6f8; color: #2a2a2a;
+  }
+  .header {
+    background: white; padding: 16px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid #e8e8ec; gap: 24px;
+  }
+  .header-titulo { flex: 1; }
+  .header-titulo h1 { margin: 0; font-size: 17px; font-weight: 700; color: #1a1a1a; letter-spacing: -0.2px; }
+  .header-titulo p { margin: 3px 0 0 0; font-size: 12px; color: #888; font-weight: 400; }
+  .header-logos { display: flex; align-items: center; gap: 14px; }
+  .header-logos .logo-sancorseguros { height: 38px; width: auto; }
+
+  .filtros-row {
+    background: white; padding: 26px 28px 12px 28px;
+    display: grid; grid-template-columns: repeat(4, 1fr) 250px; gap: 12px;
+    border-bottom: 1px solid #e8e8ec;
+    align-items: end;
+  }
+  .filtros-row.row-2 { grid-template-columns: 1fr; padding-top: 0; padding-bottom: 14px; }
+  .filtro { position: relative; }
+  .filtro-label {
+    position: absolute; top: -7px; left: 10px;
+    background: white; padding: 0 5px;
+    font-size: 10px; font-weight: 700; color: #888;
+    letter-spacing: 0.4px; text-transform: uppercase; z-index: 2;
+  }
+  .filtro select {
+    appearance: none; -webkit-appearance: none;
+    background: white url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8.5L1.5 4h9z'/%3E%3C/svg%3E") no-repeat right 10px center;
+    border: 1px solid #d6d8dc; border-radius: 6px;
+    padding: 9px 32px 9px 12px; font-size: 12px; color: #333; cursor: pointer;
+    width: 100%; transition: border-color .15s;
+  }
+  .filtro select:hover { border-color: #999; }
+  .filtro select:focus { outline: none; border-color: #1F4E78; box-shadow: 0 0 0 2px rgba(31,78,120,.1); }
+  .filtro.empresa {
+    position: relative;
+    padding-left: 16px;
+    border-left: 2px dashed #C8102E;
+  }
+  .filtro.empresa select {
+    border: 2px solid #C8102E; font-weight: 700; color: #C8102E;
+    background-color: #FFF5F7;
+  }
+  .filtro.empresa .filtro-label { color: #C8102E; font-weight: 800; }
+  .filtro.empresa::before {
+    content: 'Solo aplica al mapa derecho ↓';
+    position: absolute; top: -22px; left: 16px; right: 0;
+    font-size: 9px; color: #C8102E; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.4px;
+  }
+
+  /* ============================================================
+     PANEL INTERPRETATIVO PRINCIPAL (reemplaza al Ajuste Sugerido)
+     ============================================================ */
+  .panel-interpretacion {
+    margin: 14px 28px;
+    background: white; border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    overflow: hidden;
+  }
+  .panel-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1.6fr;
+    align-items: stretch;
+  }
+  /* Columnas laterales con métricas */
+  .panel-lado {
+    padding: 18px 22px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .panel-lado.mercado { background: linear-gradient(135deg, #f4f8fb 0%, #e8eff5 100%); }
+  .panel-lado.empresa { background: linear-gradient(135deg, #fdf5f7 0%, #f9e8ec 100%); }
+  .panel-lado-titulo {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.6px;
+    text-transform: uppercase; opacity: 0.7;
+  }
+  .panel-lado.mercado .panel-lado-titulo { color: #1F4E78; }
+  .panel-lado.empresa .panel-lado-titulo { color: #C8102E; }
+  .panel-lado-sub { font-size: 11px; color: #888; margin-top: -6px; }
+  .panel-metricas-mini {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px;
+  }
+  .metric-mini {
+    background: white; padding: 7px 10px; border-radius: 5px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  }
+  .metric-mini-label {
+    font-size: 9px; color: #888; font-weight: 700;
+    letter-spacing: 0.3px; text-transform: uppercase;
+  }
+  .metric-mini-valor {
+    font-size: 18px; font-weight: 800; color: #1a1a1a;
+    letter-spacing: -0.4px; line-height: 1.1; margin-top: 2px;
+  }
+  .panel-lado.mercado .metric-mini-valor { color: #1F4E78; }
+  .panel-lado.empresa .metric-mini-valor { color: #C8102E; }
+
+  /* Columna central: diagnóstico */
+  .panel-centro {
+    padding: 18px 24px;
+    display: flex; flex-direction: column; justify-content: center;
+    text-align: center;
+    border-left: 2px solid #f0f0f0;
+    border-right: 2px solid #f0f0f0;
+  }
+  .panel-centro-titulo {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.6px;
+    text-transform: uppercase; color: #555; margin-bottom: 6px;
+  }
+  .panel-diagnostico {
+    font-size: 22px; font-weight: 800; line-height: 1.15;
+    letter-spacing: -0.4px; margin-bottom: 8px;
+  }
+  .panel-diagnostico-icono {
+    display: inline-block; margin-right: 8px;
+    font-size: 22px; line-height: 1;
+  }
+  /* Estados del diagnóstico — todos en tonos neutros (descriptivos, no prescriptivos) */
+  .panel-centro.estado-alineado { background: linear-gradient(135deg, #f7f8fa 0%, #e8e9ec 100%); }
+  .panel-centro.estado-alineado .panel-diagnostico { color: #2a3a4f; }
+  .panel-centro.estado-bajar { background: linear-gradient(135deg, #f7f8fa 0%, #e8e9ec 100%); }
+  .panel-centro.estado-bajar .panel-diagnostico { color: #2a3a4f; }
+  .panel-centro.estado-mantener { background: linear-gradient(135deg, #f7f8fa 0%, #e8e9ec 100%); }
+  .panel-centro.estado-mantener .panel-diagnostico { color: #2a3a4f; }
+  .panel-centro.estado-subir { background: linear-gradient(135deg, #f7f8fa 0%, #e8e9ec 100%); }
+  .panel-centro.estado-subir .panel-diagnostico { color: #2a3a4f; }
+  .panel-explicacion {
+    font-size: 12px; color: #555; line-height: 1.45;
+    margin-top: 4px;
+  }
+  .panel-explicacion strong { color: #1a1a1a; }
+  .panel-numeros-clave {
+    display: flex; justify-content: center; gap: 18px;
+    margin-top: 12px; padding-top: 10px;
+    border-top: 1px solid rgba(0,0,0,.08);
+  }
+  .num-clave { text-align: center; }
+  .num-clave-label {
+    font-size: 9px; color: #777; font-weight: 700;
+    letter-spacing: 0.3px; text-transform: uppercase;
+  }
+  .num-clave-valor {
+    font-size: 17px; font-weight: 800;
+    letter-spacing: -0.3px; margin-top: 2px;
+  }
+  .num-clave-mas { color: #C8102E; }
+  .num-clave-menos { color: #28a745; }
+  .num-clave-neutro { color: #555; }
+
+  /* Mapas */
+  .comparativo-wrap {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    padding: 14px 28px; align-items: start;
+  }
+  .columna {
+    background: white; border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06); overflow: hidden;
+  }
+  .columna-header {
+    padding: 12px 16px; font-weight: 700; font-size: 13px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #eee;
+  }
+  .columna-mercado .columna-header { background: linear-gradient(135deg, #1F4E78 0%, #2E75B6 100%); color: white; }
+  .columna-empresa .columna-header { background: linear-gradient(135deg, #8B0030 0%, #C8102E 100%); color: white; }
+  .columna-titulo-emp { font-size: 11px; font-weight: 400; opacity: 0.85; }
+  .mapa-c { width: 100%; height: 430px; position: relative; }
+  .kpis-c {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+    padding: 10px;
+  }
+  .kpi-c {
+    background: #f7f8fa; padding: 10px 12px;
+    border-radius: 6px;
+  }
+  .kpi-c-label { font-size: 10px; color: #666; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+  .kpi-c-valor { font-size: 19px; font-weight: 700; color: #1a1a1a; line-height: 1; }
+  .kpi-c-extra { font-size: 9px; color: #999; margin-top: 3px; }
+
+  /* Leyenda */
+  .legend {
+    background: white; padding: 9px 11px;
+    border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.15);
+    font-size: 10px; line-height: 1.4; min-width: 150px;
+  }
+  .legend .titulo { font-weight: 700; margin-bottom: 5px; color: #333; font-size: 10px; }
+  .legend-bar {
+    height: 9px;
+    background: linear-gradient(to right, #1a9850 0%, #91cf60 20%, #d9ef8b 40%, #fee08b 60%, #fc8d59 80%, #d73027 100%);
+    border-radius: 2px; margin-bottom: 3px;
+    border: 1px solid rgba(0,0,0,.1);
+  }
+  .legend-labels { display: flex; justify-content: space-between; font-size: 9px; color: #555; font-weight: 600; }
+  .legend-nota {
+    margin-top: 4px; font-size: 8.5px; color: #999;
+    font-style: italic; line-height: 1.3;
+  }
+  .legend-sin-dato { margin-top: 5px; font-size: 9px; color: #666; display: flex; align-items: center; gap: 5px; }
+  .legend-sin-dato i { display: inline-block; width: 12px; height: 9px; background: #e6e6e6; border: 1px solid rgba(0,0,0,.1); }
+
+  .leaflet-popup-content { margin: 10px 12px; min-width: 200px; font-size: 11px; }
+  .popup-tabla h4 { margin: 0 0 3px 0; font-size: 13px; color: #1a1a1a; font-weight: 700; }
+  .popup-tabla .sub { color: #888; font-size: 10px; margin-bottom: 6px; }
+  .popup-tabla table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .popup-tabla td { padding: 2px 0; }
+  .popup-tabla td:first-child { color: #666; }
+  .popup-tabla td:last-child { font-weight: 600; text-align: right; color: #1a1a1a; }
+  .popup-tabla tr.destacado td { color: #1F4E78; font-weight: 700; padding-top: 5px; border-top: 1px solid #e8e8ec; }
+
+  .disclaimer {
+    padding: 0 28px 16px 28px;
+    font-size: 10px; color: #888; line-height: 1.5;
+    border-top: 1px solid #e8e8ec; padding-top: 12px; margin-top: 6px;
+  }
+  .disclaimer strong { color: #555; }
+
+  /* ============================================================
+     GRÁFICO TEMPORAL
+     ============================================================ */
+  .grafico-section {
+    margin: 14px 28px;
+    background: white; border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    overflow: hidden;
+  }
+  .grafico-header {
+    padding: 14px 18px;
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    color: white;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .grafico-titulo {
+    font-size: 14px; font-weight: 700;
+  }
+  .grafico-titulo-sub {
+    font-size: 10px; opacity: 0.85; margin-top: 2px;
+  }
+  .grafico-controles {
+    display: flex; gap: 6px; align-items: center;
+  }
+  .grafico-toggle {
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.25);
+    color: white;
+    padding: 6px 14px; border-radius: 5px;
+    font-size: 11px; font-weight: 700;
+    cursor: pointer; transition: all .15s;
+    letter-spacing: 0.3px;
+  }
+  .grafico-toggle:hover { background: rgba(255,255,255,.2); }
+  .grafico-toggle.activo {
+    background: white; color: #2d3748;
+    border-color: white;
+  }
+  .grafico-body {
+    padding: 18px 22px 14px 22px;
+    position: relative;
+  }
+  .grafico-svg {
+    width: 100%; height: 320px;
+    display: block;
+  }
+  .grafico-leyenda {
+    display: flex; gap: 16px; justify-content: center;
+    margin-top: 8px; font-size: 11px;
+  }
+  .leyenda-item {
+    display: flex; align-items: center; gap: 6px;
+    color: #555;
+  }
+  .leyenda-color {
+    width: 16px; height: 4px; border-radius: 2px;
+  }
+  .grafico-info {
+    margin-top: 6px; font-size: 10px; color: #999;
+    text-align: center; font-style: italic;
+  }
+  .grafico-info strong { color: #555; font-style: normal; }
+  .grafico-vacio {
+    height: 320px; display: flex; align-items: center; justify-content: center;
+    color: #aaa; font-size: 12px;
+  }
+  /* Tooltip del gráfico */
+  .grafico-tooltip {
+    position: absolute; pointer-events: none;
+    background: rgba(20, 25, 35, .94); color: white;
+    padding: 8px 11px; border-radius: 5px;
+    font-size: 11px; line-height: 1.4;
+    z-index: 100; opacity: 0; transition: opacity .12s;
+    box-shadow: 0 4px 12px rgba(0,0,0,.2);
+    min-width: 150px;
+  }
+  .grafico-tooltip.visible { opacity: 1; }
+  .grafico-tooltip-titulo {
+    font-weight: 800; margin-bottom: 4px;
+    border-bottom: 1px solid rgba(255,255,255,.2);
+    padding-bottom: 3px;
+  }
+  .grafico-tooltip-row {
+    display: flex; justify-content: space-between; gap: 12px;
+  }
+  .grafico-tooltip-mercado { color: #8FB8E5; }
+  .grafico-tooltip-empresa { color: #FFA0A8; }
+  #status {
+    position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,.78); color: white;
+    padding: 7px 16px; border-radius: 20px; font-size: 11px;
+    z-index: 9999; transition: opacity .3s;
+  }
+  #status.hidden { opacity: 0; pointer-events: none; }
+
+  @media (max-width: 1100px) {
+    .comparativo-wrap { grid-template-columns: 1fr; }
+    .panel-grid { grid-template-columns: 1fr; }
+    .filtros-row { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-titulo">
+    <h1>Análisis Comparativo: Mercado Total vs Compañía</h1>
+    <p>Izquierda: mercado consolidado · Derecha: solo la compañía seleccionada · Filtros geográficos aplican a ambos mapas</p>
+  </div>
+  <div class="header-logos">
+    <img src="https://www.sancorseguros.com.ar/logo.svg" alt="SANCOR SEGUROS" class="logo-sancorseguros">
+  </div>
+</div>
+
+<div class="filtros-row">
+  <div class="filtro">
+    <div class="filtro-label">PROVINCIA</div>
+    <select id="f-provincia"><option value="">Todas</option></select>
+  </div>
+  <div class="filtro">
+    <div class="filtro-label">DEPARTAMENTO</div>
+    <select id="f-departamento"><option value="">Todos</option></select>
+  </div>
+  <div class="filtro">
+    <div class="filtro-label">CULTIVO</div>
+    <select id="f-cultivo"><option value="">Todos</option></select>
+  </div>
+  <div class="filtro">
+    <div class="filtro-label">ESCENARIO CAT</div>
+    <select id="f-escenario"></select>
+  </div>
+  <div class="filtro empresa">
+    <div class="filtro-label">COMPAÑÍA</div>
+    <select id="f-empresa"></select>
+  </div>
+</div>
+
+<div class="filtros-row row-2">
+  <div class="filtro">
+    <div class="filtro-label">COBERTURA</div>
+    <select id="f-cobertura"><option value="">Todas</option></select>
+  </div>
+</div>
+
+<!-- PANEL INTERPRETATIVO PRINCIPAL -->
+<div class="panel-interpretacion">
+  <div class="panel-grid">
+    <div class="panel-lado mercado">
+      <div class="panel-lado-titulo">Mercado consolidado</div>
+      <div class="panel-lado-sub">Todas las compañías</div>
+      <div class="panel-metricas-mini">
+        <div class="metric-mini">
+          <div class="metric-mini-label">LC Histórico</div>
+          <div class="metric-mini-valor" id="m-lc">—</div>
+        </div>
+        <div class="metric-mini">
+          <div class="metric-mini-label">Tasa Teórica</div>
+          <div class="metric-mini-valor" id="m-tasa">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-centro estado-alineado" id="panel-centro">
+      <div class="panel-centro-titulo">Posición Relativa al Mercado</div>
+      <div class="panel-diagnostico" id="panel-diagnostico">
+        <span class="panel-diagnostico-icono" id="panel-icono">⏳</span>
+        <span id="panel-veredicto">Cargando…</span>
+      </div>
+      <div class="panel-explicacion" id="panel-explicacion">—</div>
+      <div class="panel-numeros-clave">
+        <div class="num-clave">
+          <div class="num-clave-label">ΔLC Histórico</div>
+          <div class="num-clave-valor" id="delta-lc">—</div>
+        </div>
+        <div class="num-clave">
+          <div class="num-clave-label">ΔTasa</div>
+          <div class="num-clave-valor" id="delta-tasa">—</div>
+        </div>
+        <div class="num-clave">
+          <div class="num-clave-label">Cuota Mercado</div>
+          <div class="num-clave-valor num-clave-neutro" id="cuota-mercado">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-lado empresa">
+      <div class="panel-lado-titulo" id="panel-empresa-titulo">Compañía 5</div>
+      <div class="panel-lado-sub">Cartera específica</div>
+      <div class="panel-metricas-mini">
+        <div class="metric-mini">
+          <div class="metric-mini-label">LC Histórico</div>
+          <div class="metric-mini-valor" id="e-lc">—</div>
+        </div>
+        <div class="metric-mini">
+          <div class="metric-mini-label">Tasa Teórica</div>
+          <div class="metric-mini-valor" id="e-tasa">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="comparativo-wrap">
+  <div class="columna columna-mercado">
+    <div class="columna-header">
+      <div>
+        <div>Mapa Mercado</div>
+        <div class="columna-titulo-emp" style="margin-top:2px">Todas las compañías consolidadas</div>
+      </div>
+      <div class="columna-titulo-emp" id="titulo-mercado-ha">—</div>
+    </div>
+    <div class="mapa-c" id="map-mercado"></div>
+    <div class="kpis-c">
+      <div class="kpi-c"><div class="kpi-c-label">LC Histórico</div><div class="kpi-c-valor" id="kpi-m-lc">—</div></div>
+      <div class="kpi-c"><div class="kpi-c-label">LC ajustado CAT</div><div class="kpi-c-valor" id="kpi-m-cat">—</div></div>
+      <div class="kpi-c"><div class="kpi-c-label">Tasa Teórica</div><div class="kpi-c-valor" id="kpi-m-tasa">—</div></div>
+      <div class="kpi-c"><div class="kpi-c-label">Hectáreas</div><div class="kpi-c-valor" id="kpi-m-ha">—</div></div>
+    </div>
+  </div>
+
+  <div class="columna columna-empresa">
+    <div class="columna-header">
+      <div>
+        <div>Mapa <span id="titulo-empresa">Compañía</span></div>
+        <div class="columna-titulo-emp" style="margin-top:2px">Cartera específica seleccionada</div>
+      </div>
+      <div class="columna-titulo-emp" id="titulo-empresa-ha">—</div>
+    </div>
+    <div class="mapa-c" id="map-empresa"></div>
+    <div class="kpis-c">
+      <div class="kpi-c"><div class="kpi-c-label">LC Histórico</div><div class="kpi-c-valor" id="kpi-e-lc">—</div></div>
+      <div class="kpi-c"><div class="kpi-c-label">LC ajustado CAT</div><div class="kpi-c-valor" id="kpi-e-cat">—</div></div>
+      <div class="kpi-c"><div class="kpi-c-label">Tasa Teórica</div><div class="kpi-c-valor" id="kpi-e-tasa">—</div></div>
+      <div class="kpi-c"><div class="kpi-c-label">Cuota Mercado</div><div class="kpi-c-valor" id="kpi-e-cuota">—</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="grafico-section">
+  <div class="grafico-header">
+    <div>
+      <div class="grafico-titulo">Evolución Temporal por Campaña</div>
+      <div class="grafico-titulo-sub">Aplica los mismos filtros activos arriba (provincia, depto, cultivo, cobertura, compañía)</div>
+    </div>
+    <div class="grafico-controles">
+      <button class="grafico-toggle activo" data-metrica="lc" id="btn-lc">LC Siniestralidad</button>
+      <button class="grafico-toggle" data-metrica="hectareas" id="btn-ha">Hectáreas</button>
+      <button class="grafico-toggle" data-metrica="indemnizacion" id="btn-ind">Indemnización</button>
+    </div>
+  </div>
+  <div class="grafico-body">
+    <svg class="grafico-svg" id="grafico-svg" viewBox="0 0 900 320" preserveAspectRatio="none"></svg>
+    <div class="grafico-tooltip" id="grafico-tooltip"></div>
+    <div class="grafico-leyenda">
+      <div class="leyenda-item">
+        <div class="leyenda-color" style="background:#1F4E78"></div>
+        <span>Mercado consolidado</span>
+      </div>
+      <div class="leyenda-item">
+        <div class="leyenda-color" style="background:#C8102E"></div>
+        <span id="leyenda-emp-text">Compañía 5</span>
+      </div>
+    </div>
+    <div class="grafico-info" id="grafico-info">Peor campaña: <strong>—</strong></div>
+  </div>
+</div>
+
+<div class="disclaimer">
+  <strong>Cómo leer los indicadores:</strong>
+  <strong>LC Histórico</strong> es la siniestralidad observada (pérdida sobre suma asegurada, ponderada por hectáreas). <strong>Tasa Teórica</strong> es la prima técnica de referencia (LC ajustado por CAT ÷ 0,6). El <strong>ΔLC</strong> y <strong>ΔTasa</strong> indican la posición porcentual de la compañía respecto al mercado consolidado: valores positivos indican que la compañía está por encima del mercado. Cada mapa usa una escala de color independiente para maximizar el contraste visual interno; para comparar valores absolutos entre mapas use los números. Material analítico de referencia; las decisiones tarifarias requieren considerar adicionalmente el perfil de cartera, el costo de capital, los gastos y la estrategia comercial de cada compañía.
+</div>
+
+<div id="status">Cargando datos…</div>
+
+<script>
+const GEOJSON_URL = 'https://raw.githubusercontent.com/fransalari/mapas-agro/main/admin_boundaries_vf.json';
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQnn5QR-XWMbQu56h-1tscw-Cik5vTI5O7Do8jjBeby4MpAar0jw2_xQ6_SuIxUoOvE-opa_VlnjYcx/pub?gid=1613070223&single=true&output=csv';
+// ⚠ Reemplazar con la URL del CSV de la base TEMPORAL (Base_Temporal_Mercado_Empresas.csv)
+// Subir el archivo a una hoja del Google Sheets, publicar como CSV y pegar la URL acá.
+const CSV_TEMPORAL_URL = 'URL_DEL_CSV_TEMPORAL_AQUI';
+
+const ESCENARIO_DEFAULT = 'N (dinámico)';
+const PALETA = [
+  { stop: 0.00, color: [26, 152, 80] },
+  { stop: 0.20, color: [145, 207, 96] },
+  { stop: 0.40, color: [217, 239, 139] },
+  { stop: 0.60, color: [254, 224, 139] },
+  { stop: 0.80, color: [252, 141, 89] },
+  { stop: 1.00, color: [215, 48, 39] }
+];
+const COLOR_SIN_DATO = '#e6e6e6';
+
+let escalaMercado = { min: 0, max: 5 };
+let escalaEmpresa = { min: 0, max: 5 };
+
+let geojsonData = null;
+let csvData = [];
+let csvTemporal = [];  // datos por campaña para el gráfico
+let metricaGrafico = 'lc';  // 'lc' | 'hectareas' | 'indemnizacion'
+let mapMercado = null, mapEmpresa = null;
+let layerMercado = null, layerEmpresa = null;
+let statsMercado = new Map(), statsEmpresa = new Map();
+
+const filtros = {
+  empresa: '5',
+  provincia: '', departamento: '', cultivo: '', cobertura: '',
+  escenario: ESCENARIO_DEFAULT
+};
+
+function parseNum(v) {
+  if (v == null || v === '') return null;
+  if (typeof v === 'number') return isFinite(v) ? v : null;
+  let s = String(v).trim();
+  if (!s) return null;
+  s = s.replace(/[%$\s]/g, '');
+  const lastDot = s.lastIndexOf('.'), lastComma = s.lastIndexOf(',');
+  if (lastDot >= 0 && lastComma >= 0) {
+    if (lastComma > lastDot) s = s.replace(/\./g, '').replace(',', '.');
+    else s = s.replace(/,/g, '');
+  } else if (lastComma >= 0) {
+    s = s.replace(',', '.');
+  }
+  const n = parseFloat(s);
+  return isFinite(n) ? n : null;
+}
+
+function normalizarHeader(h) {
+  if (!h) return '';
+  return String(h).replace(/^\ufeff/, '').trim().toLowerCase();
+}
+
+async function init() {
+  initMaps();
+  try {
+    await cargarDatos();
+    popularFiltros();
+    setupEventListeners();
+    refrescar();
+    setStatus('', true);
+  } catch (e) {
+    setStatus('Error: ' + e.message);
+    console.error(e);
+  }
+}
+
+function initMaps() {
+  const opts = { preferCanvas: true, zoomControl: true };
+  mapMercado = L.map('map-mercado', opts).setView([-35, -64], 4);
+  mapEmpresa = L.map('map-empresa', opts).setView([-35, -64], 4);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap · CARTO', subdomains: 'abcd', maxZoom: 18
+  }).addTo(mapMercado);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap · CARTO', subdomains: 'abcd', maxZoom: 18
+  }).addTo(mapEmpresa);
+
+  let syncing = false;
+  function syncFrom(src, dst) {
+    src.on('move zoom', () => {
+      if (syncing) return;
+      syncing = true;
+      dst.setView(src.getCenter(), src.getZoom(), { animate: false });
+      syncing = false;
+    });
+  }
+  syncFrom(mapMercado, mapEmpresa);
+  syncFrom(mapEmpresa, mapMercado);
+
+  function addLegend(map, sufijo) {
+    const legend = L.control({ position: 'bottomright' });
+    legend.onAdd = function() {
+      const div = L.DomUtil.create('div', 'legend');
+      div.innerHTML = `
+        <div class="titulo">LC Histórico</div>
+        <div class="legend-bar"></div>
+        <div class="legend-labels">
+          <span id="leg-min-${sufijo}">—</span>
+          <span id="leg-mid-${sufijo}" style="color:#888">—</span>
+          <span id="leg-max-${sufijo}">—</span>
+        </div>
+        <div class="legend-nota">Escala relativa a este mapa</div>
+        <div class="legend-sin-dato"><i></i>Sin datos</div>`;
+      return div;
+    };
+    legend.addTo(map);
+  }
+  addLegend(mapMercado, 'm');
+  addLegend(mapEmpresa, 'e');
+}
+
+async function cargarDatos() {
+  setStatus('Descargando mapa…');
+  const geoResp = await fetch(GEOJSON_URL);
+  if (!geoResp.ok) throw new Error(`GeoJSON ${geoResp.status}`);
+  geojsonData = await geoResp.json();
+  if (geojsonData.type === 'Topology') {
+    await cargarScript('https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js');
+    const obj = Object.keys(geojsonData.objects)[0];
+    geojsonData = topojson.feature(geojsonData, geojsonData.objects[obj]);
+  }
+
+  setStatus('Descargando datos…');
+  const csvResp = await fetch(CSV_URL);
+  if (!csvResp.ok) throw new Error(`CSV ${csvResp.status}. ¿Está publicado?`);
+  const csvText = await csvResp.text();
+  const parsed = Papa.parse(csvText, {
+    header: true, skipEmptyLines: true, transformHeader: normalizarHeader
+  });
+
+  console.log('Columnas:', parsed.meta.fields);
+
+  const camposNumericos = [
+    'geo_id', 'registros', 'anios_considerados', 'hectareas',
+    'hectareas_total_dpto_cultivo', 'representatividad_pct',
+    'lc_medio_pct', 'lc_max_pct', 'desvio_lc_pct',
+    'adic_cat_prorrateado_pct', 'lc_mas_cat_pct',
+    'tasa_comercial_pct', 'tasa_mercado_esperada_pct',
+    'n_divisor'
+  ];
+  csvData = parsed.data.map(row => {
+    const out = { ...row };
+    for (const k of camposNumericos) {
+      if (k in out) out[k] = parseNum(out[k]);
+    }
+    out.n_anios_cat_str = String(row.n_anios_cat || '').trim();
+    out.vista_str = String(row.vista || '').trim();
+    return out;
+  }).filter(r => r.geo_id != null);
+
+  console.log('Total filas:', csvData.length);
+
+  // Cargar base TEMPORAL (no bloqueante: si falla, el gráfico queda vacío pero el resto funciona)
+  if (CSV_TEMPORAL_URL && !CSV_TEMPORAL_URL.startsWith('URL_DEL')) {
+    try {
+      setStatus('Descargando datos temporales…');
+      const tResp = await fetch(CSV_TEMPORAL_URL);
+      if (tResp.ok) {
+        const tText = await tResp.text();
+        const tParsed = Papa.parse(tText, {
+          header: true, skipEmptyLines: true, transformHeader: normalizarHeader
+        });
+        const camposNumT = ['hectareas','suma_asegurada','indemnizacion','lc_ponderado_pct','registros'];
+        csvTemporal = tParsed.data.map(row => {
+          const out = { ...row };
+          for (const k of camposNumT) {
+            if (k in out) out[k] = parseNum(out[k]);
+          }
+          out.vista_str = String(row.vista || '').trim();
+          out.campania_str = String(row.campania || '').trim();
+          return out;
+        }).filter(r => r.campania_str);
+        console.log('Base temporal:', csvTemporal.length, 'filas');
+      } else {
+        console.warn('No se pudo cargar la base temporal:', tResp.status);
+      }
+    } catch (e) {
+      console.warn('Error cargando base temporal:', e.message);
+    }
+  }
+
+  setStatus(`${csvData.length.toLocaleString('es-AR')} filas cargadas`);
+}
+
+function cargarScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+function popularFiltros() {
+  const empresas = new Set();
+  for (const r of csvData) {
+    if (r.vista_str && r.vista_str.startsWith('EMPRESA_')) {
+      empresas.add(r.vista_str.replace('EMPRESA_', ''));
+    }
+  }
+  const selEmp = document.getElementById('f-empresa');
+  selEmp.innerHTML = '';
+  [...empresas].sort((a,b) => Number(a) - Number(b)).forEach(e => {
+    const opt = document.createElement('option');
+    opt.value = e;
+    opt.textContent = `Compañía ${e}`;
+    selEmp.appendChild(opt);
+  });
+  selEmp.value = filtros.empresa;
+
+  popularProvincias();
+  popularDeptos();
+  popularCultivos();
+  popularCoberturas();
+  popularEscenarios();
+}
+
+function casosUnicosPorCampo(campo) {
+  const conteo = new Map();
+  const vistos = new Set();
+  for (const r of csvData) {
+    if (r.vista_str !== 'MERCADO') continue;
+    if (campo !== 'provincia' && filtros.provincia && r.provincia !== filtros.provincia) continue;
+    if (campo !== 'departamento' && filtros.departamento && r.departamento !== filtros.departamento) continue;
+    if (campo !== 'cultivo' && filtros.cultivo && r.cultivo !== filtros.cultivo) continue;
+    if (campo !== 'cobertura' && filtros.cobertura && r.cobertura !== filtros.cobertura) continue;
+    const valor = r[campo];
+    if (!valor) continue;
+    const combo = `${r.provincia}||${r.departamento}||${r.cultivo}||${r.cobertura}`;
+    if (vistos.has(combo)) continue;
+    vistos.add(combo);
+    const casos = (typeof r.registros === 'number' && r.registros > 0) ? r.registros : 1;
+    conteo.set(valor, (conteo.get(valor) || 0) + casos);
+  }
+  return conteo;
+}
+
+function popularSelect(id, conteo, placeholder, valorActual = '') {
+  const sel = document.getElementById(id);
+  const ordenados = [...conteo.entries()].sort((a,b) => b[1] - a[1]);
+  sel.innerHTML = `<option value="">${placeholder} (${[...conteo.values()].reduce((a,b)=>a+b,0).toLocaleString('es-AR')})</option>`;
+  for (const [v, n] of ordenados) {
+    const opt = document.createElement('option');
+    opt.value = v;
+    opt.textContent = `${v} (${n.toLocaleString('es-AR')})`;
+    sel.appendChild(opt);
+  }
+  if ([...conteo.keys()].includes(valorActual)) sel.value = valorActual;
+}
+
+function popularProvincias() {
+  popularSelect('f-provincia', casosUnicosPorCampo('provincia'), 'Todas las provincias', filtros.provincia);
+}
+function popularDeptos() {
+  popularSelect('f-departamento', casosUnicosPorCampo('departamento'), 'Todos los departamentos', filtros.departamento);
+}
+function popularCultivos() {
+  popularSelect('f-cultivo', casosUnicosPorCampo('cultivo'), 'Todos los cultivos', filtros.cultivo);
+}
+function popularCoberturas() {
+  popularSelect('f-cobertura', casosUnicosPorCampo('cobertura'), 'Todas las coberturas', filtros.cobertura);
+}
+function popularEscenarios() {
+  const conteo = new Map();
+  const vistos = new Set();
+  for (const r of csvData) {
+    if (r.vista_str !== 'MERCADO') continue;
+    if (filtros.provincia && r.provincia !== filtros.provincia) continue;
+    if (filtros.departamento && r.departamento !== filtros.departamento) continue;
+    if (filtros.cultivo && r.cultivo !== filtros.cultivo) continue;
+    if (filtros.cobertura && r.cobertura !== filtros.cobertura) continue;
+    if (!r.n_anios_cat_str) continue;
+    const combo = `${r.provincia}||${r.departamento}||${r.cultivo}||${r.cobertura}||${r.n_anios_cat_str}`;
+    if (vistos.has(combo)) continue;
+    vistos.add(combo);
+    const casos = (typeof r.registros === 'number' && r.registros > 0) ? r.registros : 1;
+    conteo.set(r.n_anios_cat_str, (conteo.get(r.n_anios_cat_str) || 0) + casos);
+  }
+  const arr = [...conteo.keys()].sort((a,b) => {
+    if (a === ESCENARIO_DEFAULT) return -1;
+    if (b === ESCENARIO_DEFAULT) return 1;
+    const na = parseFloat(a), nb = parseFloat(b);
+    if (!isNaN(na) && !isNaN(nb)) return na - nb;
+    return a.localeCompare(b);
+  });
+  const sel = document.getElementById('f-escenario');
+  const val = sel.value || filtros.escenario;
+  sel.innerHTML = '';
+  for (const e of arr) {
+    const opt = document.createElement('option');
+    opt.value = e;
+    let label = e;
+    if (e === ESCENARIO_DEFAULT) label = 'Reserva CAT Dinámica';
+    else if (/^\d+$/.test(e)) label = `Reserva CAT ${e} años`;
+    const n = conteo.get(e) || 0;
+    opt.textContent = `${label} (${n.toLocaleString('es-AR')})`;
+    sel.appendChild(opt);
+  }
+  if (arr.includes(val)) sel.value = val;
+}
+
+function setupEventListeners() {
+  document.getElementById('f-empresa').addEventListener('change', e => {
+    filtros.empresa = e.target.value;
+    refrescar();
+  });
+  document.getElementById('f-provincia').addEventListener('change', e => {
+    filtros.provincia = e.target.value; filtros.departamento = '';
+    popularDeptos(); popularCultivos(); popularCoberturas(); popularEscenarios(); refrescar();
+  });
+  document.getElementById('f-departamento').addEventListener('change', e => {
+    filtros.departamento = e.target.value;
+    popularCultivos(); popularCoberturas(); popularEscenarios(); refrescar();
+  });
+  document.getElementById('f-cultivo').addEventListener('change', e => {
+    filtros.cultivo = e.target.value;
+    popularCoberturas(); popularEscenarios(); refrescar();
+  });
+  document.getElementById('f-cobertura').addEventListener('change', e => {
+    filtros.cobertura = e.target.value; popularEscenarios(); refrescar();
+  });
+  document.getElementById('f-escenario').addEventListener('change', e => {
+    filtros.escenario = e.target.value; refrescar();
+  });
+
+  // Botones de métrica del gráfico temporal
+  ['lc','hectareas','indemnizacion'].forEach(m => {
+    const btnId = m === 'lc' ? 'btn-lc' : (m === 'hectareas' ? 'btn-ha' : 'btn-ind');
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      btn.addEventListener('click', () => {
+        metricaGrafico = m;
+        document.querySelectorAll('.grafico-toggle').forEach(b => b.classList.remove('activo'));
+        btn.classList.add('activo');
+        dibujarGrafico();
+      });
+    }
+  });
+}
+
+function filtrarFilas(vista) {
+  return csvData.filter(r => {
+    if (r.vista_str !== vista) return false;
+    if (filtros.provincia && r.provincia !== filtros.provincia) return false;
+    if (filtros.departamento && r.departamento !== filtros.departamento) return false;
+    if (filtros.cultivo && r.cultivo !== filtros.cultivo) return false;
+    if (filtros.cobertura && r.cobertura !== filtros.cobertura) return false;
+    if (filtros.escenario && r.n_anios_cat_str !== filtros.escenario) return false;
+    return true;
+  });
+}
+
+function agregarPorGeoID(filas) {
+  const out = new Map();
+  for (const r of filas) {
+    const gid = r.geo_id;
+    if (gid == null) continue;
+    if (!out.has(gid)) {
+      out.set(gid, {
+        geo_id: gid, provincia: r.provincia, departamento: r.departamento,
+        lc_vals: [], lc_pesos: [],
+        cat_vals: [], cat_pesos: [],
+        tasa_vals: [], tasa_pesos: [],
+        hectareas: 0
+      });
+    }
+    const s = out.get(gid);
+    const w = (r.hectareas != null && r.hectareas > 0) ? r.hectareas : 0;
+    s.hectareas += (r.hectareas || 0);
+    if (r.lc_medio_pct != null) { s.lc_vals.push(r.lc_medio_pct); s.lc_pesos.push(w); }
+    if (r.lc_mas_cat_pct != null) { s.cat_vals.push(r.lc_mas_cat_pct); s.cat_pesos.push(w); }
+    if (r.tasa_comercial_pct != null) { s.tasa_vals.push(r.tasa_comercial_pct); s.tasa_pesos.push(w); }
+  }
+  function wavg(vals, pesos) {
+    if (!vals.length) return null;
+    let sw = 0, swv = 0, sv = 0;
+    for (let i = 0; i < vals.length; i++) {
+      sv += vals[i];
+      if (pesos[i] > 0) { sw += pesos[i]; swv += vals[i] * pesos[i]; }
+    }
+    return sw > 0 ? swv / sw : sv / vals.length;
+  }
+  for (const s of out.values()) {
+    s.lc_avg = wavg(s.lc_vals, s.lc_pesos);
+    s.cat_avg = wavg(s.cat_vals, s.cat_pesos);
+    s.tasa_avg = wavg(s.tasa_vals, s.tasa_pesos);
+  }
+  return out;
+}
+
+function calcularKPIs(filas) {
+  if (!filas.length) return { lc: null, cat: null, tasa: null, ha: 0 };
+  let sumWLC = 0, sumWCAT = 0, sumWT = 0, sumW = 0, totHa = 0;
+  for (const r of filas) {
+    const w = (r.hectareas != null && r.hectareas > 0) ? r.hectareas : 0;
+    totHa += (r.hectareas || 0);
+    if (r.lc_medio_pct != null && w) sumWLC += r.lc_medio_pct * w;
+    if (r.lc_mas_cat_pct != null && w) sumWCAT += r.lc_mas_cat_pct * w;
+    if (r.tasa_comercial_pct != null && w) sumWT += r.tasa_comercial_pct * w;
+    if (w) sumW += w;
+  }
+  return {
+    lc: sumW > 0 ? sumWLC / sumW : null,
+    cat: sumW > 0 ? sumWCAT / sumW : null,
+    tasa: sumW > 0 ? sumWT / sumW : null,
+    ha: totHa
+  };
+}
+
+function calcularEscala(stats) {
+  const vals = [];
+  for (const s of stats.values()) {
+    if (typeof s.lc_avg === 'number' && isFinite(s.lc_avg)) vals.push(s.lc_avg);
+  }
+  if (!vals.length) return { min: 0, max: 1 };
+  vals.sort((a,b) => a-b);
+  let min = vals[Math.floor(vals.length * 0.05)];
+  let max = vals[Math.floor(vals.length * 0.95)];
+  if (max <= min) max = min + 0.5;
+  if (max - min < 0.5) max = min + 0.5;
+  return { min, max };
+}
+
+function actualizarLeyenda(escala, sufijo) {
+  const minEl = document.getElementById('leg-min-' + sufijo);
+  const midEl = document.getElementById('leg-mid-' + sufijo);
+  const maxEl = document.getElementById('leg-max-' + sufijo);
+  if (minEl) minEl.textContent = escala.min.toFixed(2) + '%';
+  if (midEl) midEl.textContent = ((escala.min + escala.max) / 2).toFixed(2) + '%';
+  if (maxEl) maxEl.textContent = escala.max.toFixed(2) + '%';
+}
+
+function interpColor(t) {
+  if (t == null || isNaN(t)) return COLOR_SIN_DATO;
+  t = Math.max(0, Math.min(1, t));
+  for (let i = 0; i < PALETA.length - 1; i++) {
+    const a = PALETA[i], b = PALETA[i+1];
+    if (t >= a.stop && t <= b.stop) {
+      const lt = (t - a.stop) / (b.stop - a.stop);
+      const r = Math.round(a.color[0] + (b.color[0] - a.color[0]) * lt);
+      const g = Math.round(a.color[1] + (b.color[1] - a.color[1]) * lt);
+      const bl = Math.round(a.color[2] + (b.color[2] - a.color[2]) * lt);
+      return `rgb(${r},${g},${bl})`;
+    }
+  }
+  return COLOR_SIN_DATO;
+}
+
+function colorPorLC(v, escala) {
+  if (v == null || isNaN(v)) return COLOR_SIN_DATO;
+  if (escala.max === escala.min) return interpColor(0.5);
+  return interpColor((v - escala.min) / (escala.max - escala.min));
+}
+
+const fmtPct = v => (v==null||isNaN(v)) ? '—' : v.toFixed(2) + '%';
+const fmtPctSigno = v => {
+  if (v==null||isNaN(v)) return '—';
+  const s = v > 0 ? '+' : '';
+  return s + v.toFixed(2) + '%';
+};
+const fmtNum = v => (v==null||isNaN(v)) ? '—' : Math.round(v).toLocaleString('es-AR');
+
+function dibujarMapa(map, layer, stats, escala) {
+  if (layer) map.removeLayer(layer);
+  return L.geoJSON(geojsonData, {
+    style: feature => {
+      const gid = feature.properties.gid_dpto || feature.properties.GeoID;
+      const s = stats.get(gid);
+      return {
+        fillColor: s ? colorPorLC(s.lc_avg, escala) : COLOR_SIN_DATO,
+        weight: 0.3, color: '#777',
+        fillOpacity: s ? 0.82 : 0.15
+      };
+    },
+    onEachFeature: (feature, layer) => {
+      const gid = feature.properties.gid_dpto || feature.properties.GeoID;
+      const s = stats.get(gid);
+      const nomDpto = feature.properties.nam_dpto || '';
+      const nomProv = feature.properties.nam_prov || '';
+      if (s) {
+        layer.bindPopup(`
+          <div class="popup-tabla">
+            <h4>${nomDpto}</h4>
+            <div class="sub">${nomProv}</div>
+            <table>
+              <tr><td>Hectáreas</td><td>${fmtNum(s.hectareas)}</td></tr>
+              <tr><td>LC histórico</td><td>${fmtPct(s.lc_avg)}</td></tr>
+              <tr><td>LC ajustado CAT</td><td>${fmtPct(s.cat_avg)}</td></tr>
+              <tr class="destacado"><td>Tasa Teórica</td><td>${fmtPct(s.tasa_avg)}</td></tr>
+            </table>
+          </div>`);
+      } else {
+        layer.bindPopup(`<div class="popup-tabla"><h4>${nomDpto}</h4><div class="sub">${nomProv}</div><div style="color:#888;margin-top:6px">Sin datos</div></div>`);
+      }
+      layer.on('mouseover', e => { e.target.setStyle({ weight: 1.5, color: '#1a1a1a' }); });
+      layer.on('mouseout', e => { e.target.setStyle({ weight: 0.3, color: '#777' }); });
+    }
+  }).addTo(map);
+}
+
+// ============================================================
+// PANEL INTERPRETATIVO — Diagnóstico inteligente
+// ============================================================
+function actualizarPanelInterpretativo(km, ke) {
+  // Mostrar métricas laterales
+  document.getElementById('m-lc').textContent = fmtPct(km.lc);
+  document.getElementById('m-tasa').textContent = fmtPct(km.tasa);
+  document.getElementById('e-lc').textContent = fmtPct(ke.lc);
+  document.getElementById('e-tasa').textContent = fmtPct(ke.tasa);
+
+  const cuota = km.ha > 0 ? (ke.ha / km.ha * 100) : 0;
+  document.getElementById('cuota-mercado').textContent = cuota.toFixed(1) + '%';
+
+  // Deltas: positivo = compañía está POR ENCIMA del mercado
+  let deltaLC = null, deltaTasa = null;
+  if (km.lc != null && ke.lc != null) deltaLC = ((ke.lc - km.lc) / km.lc) * 100;
+  if (km.tasa != null && ke.tasa != null) deltaTasa = ((ke.tasa - km.tasa) / km.tasa) * 100;
+
+  const dLCel = document.getElementById('delta-lc');
+  const dTel = document.getElementById('delta-tasa');
+  if (deltaLC != null) {
+    dLCel.textContent = fmtPctSigno(deltaLC);
+    dLCel.className = 'num-clave-valor ' + (deltaLC > 0.5 ? 'num-clave-mas' : (deltaLC < -0.5 ? 'num-clave-menos' : 'num-clave-neutro'));
+  } else { dLCel.textContent = '—'; dLCel.className = 'num-clave-valor num-clave-neutro'; }
+  if (deltaTasa != null) {
+    dTel.textContent = fmtPctSigno(deltaTasa);
+    dTel.className = 'num-clave-valor ' + (deltaTasa > 0.5 ? 'num-clave-mas' : (deltaTasa < -0.5 ? 'num-clave-menos' : 'num-clave-neutro'));
+  } else { dTel.textContent = '—'; dTel.className = 'num-clave-valor num-clave-neutro'; }
+
+  // Diagnóstico interpretativo
+  const panel = document.getElementById('panel-centro');
+  const iconoEl = document.getElementById('panel-icono');
+  const veredictoEl = document.getElementById('panel-veredicto');
+  const explicEl = document.getElementById('panel-explicacion');
+
+  // Limpiar clases anteriores
+  panel.classList.remove('estado-bajar','estado-mantener','estado-subir','estado-alineado');
+
+  if (deltaLC == null || deltaTasa == null) {
+    panel.classList.add('estado-alineado');
+    iconoEl.textContent = '—';
+    veredictoEl.textContent = 'Sin datos suficientes';
+    explicEl.innerHTML = 'No hay datos para calcular la posición relativa con los filtros actuales.';
+    return;
+  }
+
+  const umbral = 2; // tolerancia para considerar "similar al mercado"
+  panel.classList.add('estado-alineado');
+
+  // Clasificar cada delta en una de 3 categorías: menor, similar, mayor
+  const catLC = deltaLC < -umbral ? 'menor' : (deltaLC > umbral ? 'mayor' : 'similar');
+  const catTasa = deltaTasa < -umbral ? 'menor' : (deltaTasa > umbral ? 'mayor' : 'similar');
+
+  // Texto descriptivo factual
+  let icono = '·';
+  let titulo = '';
+  let detalle = '';
+
+  // Mapeo de icono según las dos categorías combinadas
+  if (catLC === 'similar' && catTasa === 'similar') {
+    icono = '≈';
+    titulo = 'Posición similar al mercado';
+    detalle = `LC y tasa de la compañía no muestran diferencias significativas respecto al mercado consolidado.`;
+  }
+  else if (catLC === 'menor' && catTasa === 'menor') {
+    icono = '↘';
+    titulo = 'LC y tasa por debajo del mercado';
+    detalle = `Cartera con LC <strong>${Math.abs(deltaLC).toFixed(1)}% menor</strong> y tasa <strong>${Math.abs(deltaTasa).toFixed(1)}% menor</strong> que el mercado consolidado.`;
+  }
+  else if (catLC === 'mayor' && catTasa === 'mayor') {
+    icono = '↗';
+    titulo = 'LC y tasa por encima del mercado';
+    detalle = `Cartera con LC <strong>${deltaLC.toFixed(1)}% mayor</strong> y tasa <strong>${deltaTasa.toFixed(1)}% mayor</strong> que el mercado consolidado.`;
+  }
+  else if (catLC === 'similar' && catTasa === 'mayor') {
+    icono = '◐';
+    titulo = 'Tasa por encima del mercado';
+    detalle = `LC de la compañía similar al mercado, pero tasa <strong>${deltaTasa.toFixed(1)}% mayor</strong>.`;
+  }
+  else if (catLC === 'similar' && catTasa === 'menor') {
+    icono = '◐';
+    titulo = 'Tasa por debajo del mercado';
+    detalle = `LC de la compañía similar al mercado, pero tasa <strong>${Math.abs(deltaTasa).toFixed(1)}% menor</strong>.`;
+  }
+  else if (catLC === 'mayor' && catTasa === 'similar') {
+    icono = '◑';
+    titulo = 'LC por encima del mercado';
+    detalle = `LC de la compañía <strong>${deltaLC.toFixed(1)}% mayor</strong> que el mercado, mientras que la tasa es similar.`;
+  }
+  else if (catLC === 'menor' && catTasa === 'similar') {
+    icono = '◑';
+    titulo = 'LC por debajo del mercado';
+    detalle = `LC de la compañía <strong>${Math.abs(deltaLC).toFixed(1)}% menor</strong> que el mercado, mientras que la tasa es similar.`;
+  }
+  else if (catLC === 'mayor' && catTasa === 'menor') {
+    icono = '⇕';
+    titulo = 'LC mayor pero tasa menor que mercado';
+    detalle = `Cartera con LC <strong>${deltaLC.toFixed(1)}% mayor</strong> y tasa <strong>${Math.abs(deltaTasa).toFixed(1)}% menor</strong> que el mercado.`;
+  }
+  else if (catLC === 'menor' && catTasa === 'mayor') {
+    icono = '⇕';
+    titulo = 'LC menor pero tasa mayor que mercado';
+    detalle = `Cartera con LC <strong>${Math.abs(deltaLC).toFixed(1)}% menor</strong> y tasa <strong>${deltaTasa.toFixed(1)}% mayor</strong> que el mercado.`;
+  }
+
+  iconoEl.textContent = icono;
+  veredictoEl.textContent = titulo;
+  explicEl.innerHTML = detalle;
+}
+
+// ============================================================
+// GRÁFICO TEMPORAL
+// ============================================================
+function filtrarFilasTemporal(vista) {
+  // Aplica los mismos filtros que las otras secciones (provincia, depto, cultivo, cobertura)
+  // EXCEPTO escenario CAT (no aplica al gráfico temporal porque cada año tiene su propio dato)
+  return csvTemporal.filter(r => {
+    if (r.vista_str !== vista) return false;
+    if (filtros.provincia && r.provincia !== filtros.provincia) return false;
+    if (filtros.departamento && r.departamento !== filtros.departamento) return false;
+    if (filtros.cultivo && r.cultivo !== filtros.cultivo) return false;
+    if (filtros.cobertura && r.cobertura !== filtros.cobertura) return false;
+    return true;
+  });
+}
+
+function agruparPorCampania(filas) {
+  // Devuelve Map<campania, {hectareas, suma_asegurada, indemnizacion, lc}>
+  const out = new Map();
+  for (const r of filas) {
+    const c = r.campania_str;
+    if (!c) continue;
+    if (!out.has(c)) {
+      out.set(c, {
+        campania: c,
+        hectareas: 0,
+        suma_asegurada: 0,
+        indemnizacion: 0
+      });
+    }
+    const s = out.get(c);
+    if (r.hectareas != null) s.hectareas += r.hectareas;
+    if (r.suma_asegurada != null) s.suma_asegurada += r.suma_asegurada;
+    if (r.indemnizacion != null) s.indemnizacion += r.indemnizacion;
+  }
+  for (const s of out.values()) {
+    s.lc = s.suma_asegurada > 0 ? (s.indemnizacion / s.suma_asegurada * 100) : null;
+  }
+  return out;
+}
+
+function dibujarGrafico() {
+  const svg = document.getElementById('grafico-svg');
+  const tooltip = document.getElementById('grafico-tooltip');
+  const infoEl = document.getElementById('grafico-info');
+  if (!svg) return;
+
+  // Si no hay datos temporales cargados, mensaje
+  if (!csvTemporal || csvTemporal.length === 0) {
+    svg.innerHTML = '<text x="450" y="160" text-anchor="middle" fill="#aaa" font-size="13">Base temporal no disponible — verificar CSV_TEMPORAL_URL</text>';
+    infoEl.innerHTML = 'La base temporal no está cargada todavía.';
+    return;
+  }
+
+  const filasMercado = filtrarFilasTemporal('MERCADO');
+  const filasEmpresa = filtrarFilasTemporal('EMPRESA_' + filtros.empresa);
+
+  const grupMercado = agruparPorCampania(filasMercado);
+  const grupEmpresa = agruparPorCampania(filasEmpresa);
+
+  // Unión de todas las campañas
+  const campaniasSet = new Set([...grupMercado.keys(), ...grupEmpresa.keys()]);
+  const campanias = [...campaniasSet].sort();
+
+  if (campanias.length === 0) {
+    svg.innerHTML = '<text x="450" y="160" text-anchor="middle" fill="#aaa" font-size="13">Sin datos para los filtros seleccionados</text>';
+    infoEl.innerHTML = 'Sin datos con los filtros actuales.';
+    return;
+  }
+
+  // Obtener valores según métrica activa
+  function valorDe(s) {
+    if (!s) return null;
+    if (metricaGrafico === 'lc') return s.lc;
+    if (metricaGrafico === 'hectareas') return s.hectareas;
+    if (metricaGrafico === 'indemnizacion') return s.indemnizacion;
+    return null;
+  }
+
+  const valoresMerc = campanias.map(c => valorDe(grupMercado.get(c)));
+  const valoresEmp = campanias.map(c => valorDe(grupEmpresa.get(c)));
+
+  // Calcular rango Y
+  const todosValores = [...valoresMerc, ...valoresEmp].filter(v => v != null && isFinite(v));
+  if (todosValores.length === 0) {
+    svg.innerHTML = '<text x="450" y="160" text-anchor="middle" fill="#aaa" font-size="13">Sin valores válidos</text>';
+    infoEl.innerHTML = '—';
+    return;
+  }
+  const yMin = 0;
+  const yMax = Math.max(...todosValores) * 1.12;
+
+  // Dimensiones SVG
+  const W = 900, H = 320;
+  const margenL = 60, margenR = 20, margenT = 18, margenB = 38;
+  const plotW = W - margenL - margenR;
+  const plotH = H - margenT - margenB;
+
+  const xScale = i => margenL + (campanias.length === 1 ? plotW / 2 : (i / (campanias.length - 1)) * plotW);
+  const yScale = v => margenT + plotH - ((v - yMin) / (yMax - yMin)) * plotH;
+
+  // Formato de valores
+  const fmtV = v => {
+    if (v == null || !isFinite(v)) return '—';
+    if (metricaGrafico === 'lc') return v.toFixed(2) + '%';
+    if (metricaGrafico === 'hectareas') {
+      if (v >= 1e6) return (v / 1e6).toFixed(2) + ' M ha';
+      if (v >= 1e3) return (v / 1e3).toFixed(1) + ' k ha';
+      return Math.round(v).toLocaleString('es-AR') + ' ha';
+    }
+    if (metricaGrafico === 'indemnizacion') {
+      if (v >= 1e9) return '$ ' + (v / 1e9).toFixed(2) + ' MM';
+      if (v >= 1e6) return '$ ' + (v / 1e6).toFixed(1) + ' M';
+      if (v >= 1e3) return '$ ' + (v / 1e3).toFixed(0) + ' k';
+      return '$ ' + Math.round(v).toLocaleString('es-AR');
+    }
+    return v.toFixed(2);
+  };
+
+  // ===== Construir SVG =====
+  let svgContent = '';
+
+  // Grid lines (Y)
+  const nGridY = 5;
+  for (let i = 0; i <= nGridY; i++) {
+    const y = margenT + (i / nGridY) * plotH;
+    const val = yMin + ((nGridY - i) / nGridY) * (yMax - yMin);
+    svgContent += `<line x1="${margenL}" y1="${y}" x2="${W - margenR}" y2="${y}" stroke="#eee" stroke-width="1"/>`;
+    svgContent += `<text x="${margenL - 6}" y="${y + 3}" text-anchor="end" fill="#777" font-size="10">${fmtV(val)}</text>`;
+  }
+
+  // Eje X (campañas)
+  for (let i = 0; i < campanias.length; i++) {
+    const x = xScale(i);
+    const c = campanias[i];
+    // Mostrar solo el año de inicio para ahorrar espacio
+    const labelCorta = c.split('-')[0];
+    svgContent += `<line x1="${x}" y1="${margenT + plotH}" x2="${x}" y2="${margenT + plotH + 4}" stroke="#bbb"/>`;
+    svgContent += `<text x="${x}" y="${margenT + plotH + 18}" text-anchor="middle" fill="#555" font-size="10" font-weight="600">${labelCorta}</text>`;
+    if (campanias.length <= 14) {
+      svgContent += `<text x="${x}" y="${margenT + plotH + 30}" text-anchor="middle" fill="#999" font-size="8">${c.split('-')[1] || ''}</text>`;
+    }
+  }
+
+  // Eje Y vertical principal
+  svgContent += `<line x1="${margenL}" y1="${margenT}" x2="${margenL}" y2="${margenT + plotH}" stroke="#bbb"/>`;
+  svgContent += `<line x1="${margenL}" y1="${margenT + plotH}" x2="${W - margenR}" y2="${margenT + plotH}" stroke="#bbb"/>`;
+
+  // ===== Línea MERCADO =====
+  const pathMercado = valoresMerc.map((v, i) => {
+    if (v == null || !isFinite(v)) return null;
+    return { x: xScale(i), y: yScale(v), v, i };
+  }).filter(p => p != null);
+
+  if (pathMercado.length > 0) {
+    // Área bajo la curva (sutil)
+    let areaPath = `M ${pathMercado[0].x} ${margenT + plotH} `;
+    for (const p of pathMercado) areaPath += `L ${p.x} ${p.y} `;
+    areaPath += `L ${pathMercado[pathMercado.length - 1].x} ${margenT + plotH} Z`;
+    svgContent += `<path d="${areaPath}" fill="#1F4E78" fill-opacity="0.08"/>`;
+
+    // Línea
+    let linePath = `M ${pathMercado[0].x} ${pathMercado[0].y}`;
+    for (let i = 1; i < pathMercado.length; i++) {
+      linePath += ` L ${pathMercado[i].x} ${pathMercado[i].y}`;
+    }
+    svgContent += `<path d="${linePath}" stroke="#1F4E78" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+    // Puntos
+    for (const p of pathMercado) {
+      svgContent += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#1F4E78" stroke="white" stroke-width="1.5"
+        data-tipo="mercado" data-idx="${p.i}" data-val="${p.v}" class="grafico-punto"/>`;
+    }
+  }
+
+  // ===== Línea EMPRESA =====
+  const pathEmpresa = valoresEmp.map((v, i) => {
+    if (v == null || !isFinite(v)) return null;
+    return { x: xScale(i), y: yScale(v), v, i };
+  }).filter(p => p != null);
+
+  if (pathEmpresa.length > 0) {
+    let linePath = `M ${pathEmpresa[0].x} ${pathEmpresa[0].y}`;
+    for (let i = 1; i < pathEmpresa.length; i++) {
+      linePath += ` L ${pathEmpresa[i].x} ${pathEmpresa[i].y}`;
+    }
+    svgContent += `<path d="${linePath}" stroke="#C8102E" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0"/>`;
+
+    for (const p of pathEmpresa) {
+      svgContent += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#C8102E" stroke="white" stroke-width="1.5"
+        data-tipo="empresa" data-idx="${p.i}" data-val="${p.v}" class="grafico-punto"/>`;
+    }
+  }
+
+  svg.innerHTML = svgContent;
+
+  // Tooltip interactivo
+  const puntos = svg.querySelectorAll('.grafico-punto');
+  puntos.forEach(p => {
+    p.style.cursor = 'pointer';
+    p.addEventListener('mouseenter', (ev) => {
+      const idx = parseInt(p.getAttribute('data-idx'));
+      const camp = campanias[idx];
+      const sM = grupMercado.get(camp);
+      const sE = grupEmpresa.get(camp);
+      const vM = sM ? valorDe(sM) : null;
+      const vE = sE ? valorDe(sE) : null;
+      tooltip.innerHTML = `
+        <div class="grafico-tooltip-titulo">Campaña ${camp}</div>
+        <div class="grafico-tooltip-row grafico-tooltip-mercado">
+          <span>Mercado:</span><strong>${fmtV(vM)}</strong>
+        </div>
+        <div class="grafico-tooltip-row grafico-tooltip-empresa">
+          <span>Compañía ${filtros.empresa}:</span><strong>${fmtV(vE)}</strong>
+        </div>`;
+      tooltip.classList.add('visible');
+      const svgRect = svg.getBoundingClientRect();
+      const bodyRect = svg.closest('.grafico-body').getBoundingClientRect();
+      const cx = p.getBoundingClientRect().left - bodyRect.left + p.getBoundingClientRect().width / 2;
+      const cy = p.getBoundingClientRect().top - bodyRect.top;
+      tooltip.style.left = (cx + 12) + 'px';
+      tooltip.style.top = (cy - 10) + 'px';
+    });
+    p.addEventListener('mouseleave', () => {
+      tooltip.classList.remove('visible');
+    });
+  });
+
+  // Info: peor campaña
+  // (Sólo aplicable para LC y indemnización; para hectáreas sería "campaña con más hectáreas")
+  let peorIdx = -1, peorVal = -Infinity;
+  for (let i = 0; i < valoresMerc.length; i++) {
+    const v = valoresMerc[i];
+    if (v != null && isFinite(v) && v > peorVal) { peorVal = v; peorIdx = i; }
+  }
+  let labelMetrica = 'LC más alto';
+  if (metricaGrafico === 'hectareas') labelMetrica = 'mayor superficie asegurada';
+  else if (metricaGrafico === 'indemnizacion') labelMetrica = 'mayor indemnización pagada';
+
+  if (peorIdx >= 0) {
+    infoEl.innerHTML = `Campaña con ${labelMetrica} (mercado): <strong>${campanias[peorIdx]}</strong> · ${fmtV(peorVal)}`;
+  } else {
+    infoEl.innerHTML = '—';
+  }
+}
+
+function refrescar() {
+  if (!geojsonData) return;
+
+  const filasMercado = filtrarFilas('MERCADO');
+  const filasEmpresa = filtrarFilas('EMPRESA_' + filtros.empresa);
+
+  statsMercado = agregarPorGeoID(filasMercado);
+  statsEmpresa = agregarPorGeoID(filasEmpresa);
+
+  escalaMercado = calcularEscala(statsMercado);
+  escalaEmpresa = calcularEscala(statsEmpresa);
+
+  console.log(`Escala MERCADO: ${escalaMercado.min.toFixed(2)}% – ${escalaMercado.max.toFixed(2)}%`);
+  console.log(`Escala EMPRESA: ${escalaEmpresa.min.toFixed(2)}% – ${escalaEmpresa.max.toFixed(2)}%`);
+
+  actualizarLeyenda(escalaMercado, 'm');
+  actualizarLeyenda(escalaEmpresa, 'e');
+
+  layerMercado = dibujarMapa(mapMercado, layerMercado, statsMercado, escalaMercado);
+  layerEmpresa = dibujarMapa(mapEmpresa, layerEmpresa, statsEmpresa, escalaEmpresa);
+
+  const km = calcularKPIs(filasMercado);
+  const ke = calcularKPIs(filasEmpresa);
+
+  // KPIs detallados debajo de cada mapa
+  document.getElementById('kpi-m-lc').textContent = fmtPct(km.lc);
+  document.getElementById('kpi-m-cat').textContent = fmtPct(km.cat);
+  document.getElementById('kpi-m-tasa').textContent = fmtPct(km.tasa);
+  document.getElementById('kpi-m-ha').textContent = fmtNum(km.ha);
+  document.getElementById('kpi-e-lc').textContent = fmtPct(ke.lc);
+  document.getElementById('kpi-e-cat').textContent = fmtPct(ke.cat);
+  document.getElementById('kpi-e-tasa').textContent = fmtPct(ke.tasa);
+  const cuota = km.ha > 0 ? (ke.ha / km.ha * 100) : 0;
+  document.getElementById('kpi-e-cuota').textContent = cuota.toFixed(1) + '%';
+
+  document.getElementById('titulo-mercado-ha').textContent = `${fmtNum(km.ha)} ha`;
+  document.getElementById('titulo-empresa').textContent = `Compañía ${filtros.empresa}`;
+  document.getElementById('titulo-empresa-ha').textContent = `${fmtNum(ke.ha)} ha (${cuota.toFixed(1)}% del mercado)`;
+  document.getElementById('panel-empresa-titulo').textContent = `Compañía ${filtros.empresa}`;
+
+  // Panel interpretativo
+  actualizarPanelInterpretativo(km, ke);
+
+  // Gráfico temporal
+  document.getElementById('leyenda-emp-text').textContent = `Compañía ${filtros.empresa}`;
+  dibujarGrafico();
+
+  // Zoom
+  if (filtros.departamento) {
+    const feat = geojsonData.features.find(f => {
+      const d = f.properties.nam_dpto, p = f.properties.nam_prov;
+      return d === filtros.departamento && (!filtros.provincia || p === filtros.provincia);
+    });
+    if (feat) {
+      const tmp = L.geoJSON(feat);
+      mapMercado.fitBounds(tmp.getBounds(), { padding: [30,30], maxZoom: 9 });
+    }
+  } else if (filtros.provincia) {
+    const feats = geojsonData.features.filter(f => f.properties.nam_prov === filtros.provincia);
+    if (feats.length) {
+      const tmp = L.geoJSON({ type:'FeatureCollection', features: feats });
+      mapMercado.fitBounds(tmp.getBounds(), { padding:[15,15] });
+    }
+  } else {
+    mapMercado.setView([-35, -64], 4);
+  }
+}
+
+function setStatus(t, hide = false) {
+  const el = document.getElementById('status');
+  el.textContent = t;
+  if (hide) el.classList.add('hidden');
+  else el.classList.remove('hidden');
+}
+
+init();
+</script>
+</body>
+</html>
